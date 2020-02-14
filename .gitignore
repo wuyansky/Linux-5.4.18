@@ -50,3 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Martin
+*.si4project/
+linux-5.4.18.tar.xz
