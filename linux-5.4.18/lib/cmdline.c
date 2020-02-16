@@ -194,9 +194,9 @@ bool parse_option_str(const char *str, const char *option)
 }
 
 /*
- * Parse a string to get a param value pair.
- * You can use " around spaces, but can't escape ".
- * Hyphens and underscores equivalent in parameter names.
+ * Parse a string to get a param value pair.  //解析args，以空格作为分隔符，得到第一组参数名param和参数值val，返回下一对param和val的起始指针
+ * You can use " around spaces, but can't escape ".  //args里的param和val可以被双引号括起来。解析后得到的param和val不含双引号
+ * Hyphens and underscores equivalent in parameter names.  //当用作参数名时，连字符和下划线是等同的
  */
 char *next_arg(char *args, char **param, char **val)
 {

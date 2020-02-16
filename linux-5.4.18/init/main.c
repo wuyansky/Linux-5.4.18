@@ -173,7 +173,7 @@ static const char *argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
 const char *envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
 static const char *panic_later, *panic_param;
 
-extern const struct obs_kernel_param __setup_start[], __setup_end[];
+extern const struct obs_kernel_param __setup_start[], __setup_end[];  /* 在链接脚本里定义的一个段？ */
 
 static bool __init obsolete_checksetup(char *line)
 {
@@ -281,7 +281,7 @@ static int __init set_init_arg(char *param, char *val,
 			return 0;
 		}
 	}
-	argv_init[i] = param;
+	argv_init[i] = param;  /* 将param追加到argv_init[]后边 */
 	return 0;
 }
 
@@ -305,28 +305,28 @@ static int __init unknown_bootoption(char *param, char *val,
 	if (panic_later)
 		return 0;
 
-	if (val) {
+	if (val) {  /* 有值，则是环境变量；否则，是命令 */
 		/* Environment option */
 		unsigned int i;
 		for (i = 0; envp_init[i]; i++) {
-			if (i == MAX_INIT_ENVS) {
+			if (i == MAX_INIT_ENVS) {  /* 检查总长度，防止越界 */
 				panic_later = "env";
 				panic_param = param;
 			}
-			if (!strncmp(param, envp_init[i], val - param))
+			if (!strncmp(param, envp_init[i], val - param))  /* 主逻辑：只匹配param字段 */
 				break;
 		}
-		envp_init[i] = param;
+		envp_init[i] = param;  /* 如果前面匹配成功了，则用新的param替换预置的；如果前面匹配失败了，则将新的param追加到envp_init[]后边 */
 	} else {
 		/* Command line option */
 		unsigned int i;
 		for (i = 0; argv_init[i]; i++) {
-			if (i == MAX_INIT_ARGS) {
+			if (i == MAX_INIT_ARGS) {  /* 检查总长度，防止越界 */
 				panic_later = "init";
 				panic_param = param;
 			}
 		}
-		argv_init[i] = param;
+		argv_init[i] = param;  /* 将param追加到argv_init[]后边 */
 	}
 	return 0;
 }
@@ -453,17 +453,17 @@ noinline void __ref rest_init(void)
 
 /* Check for early params. */
 static int __init do_early_param(char *param, char *val,
-				 const char *unused, void *arg)
+				 const char *unused, void *arg)  /* 这两个参数都没用 */
 {
 	const struct obs_kernel_param *p;
 
-	for (p = __setup_start; p < __setup_end; p++) {
-		if ((p->early && parameq(param, p->str)) ||
-		    (strcmp(param, "console") == 0 &&
+	for (p = __setup_start; p < __setup_end; p++) {  /* 遍历elf的某个段，此段是一个struct obs_kernel_param型的数组 */
+		if ((p->early && parameq(param, p->str)) ||  /* 该数组元素的early标志有效，且参数名等于param */
+		    (strcmp(param, "console") == 0 &&  /* 或elf里的参数名为"earlycon"，同时param等于"console"（即通过U-Boot参数指定了控制台） */
 		     strcmp(p->str, "earlycon") == 0)
 		) {
-			if (p->setup_func(val) != 0)
-				pr_warn("Malformed early option '%s'\n", param);
+			if (p->setup_func(val) != 0)  /* 执行动作 */
+				pr_warn("Malformed early option '%s'\n", param);  /* Malformed: 畸形的 */
 		}
 	}
 	/* We accept everything at this stage. */
@@ -472,8 +472,8 @@ static int __init do_early_param(char *param, char *val,
 
 void __init parse_early_options(char *cmdline)
 {
-	parse_args("early options", cmdline, NULL, 0, 0, 0, NULL,
-		   do_early_param);
+	parse_args("early options", cmdline, NULL, 0, 0, 0, NULL,  /* TMD，这里给了一堆的NULL和0参数 */
+		   do_early_param);  /* 最终其实执行的逻辑其实很简单: 遍历cmdline，解析出每一组键值对(param, val)，然后执行 do_early_param(param, val, "early options", NULL) */
 }
 
 /* Arch code calls this early on, or if not, just before other parsing. */
@@ -486,14 +486,14 @@ void __init parse_early_param(void)
 		return;
 
 	/* All fall through to do_early_param. */
-	strlcpy(tmp_cmdline, boot_command_line, COMMAND_LINE_SIZE);
-	parse_early_options(tmp_cmdline);
+	strlcpy(tmp_cmdline, boot_command_line, COMMAND_LINE_SIZE);  /* boot_command_line里的键值对以空格分隔。例如 "console=ttyS0,115200 mem=64M@0x30000000" */
+	parse_early_options(tmp_cmdline);  /* 这一句是核心！ */
 	done = 1;
 }
 
 void __init __weak arch_post_acpi_subsys_init(void) { }
 
-void __init __weak smp_setup_processor_id(void)
+void __init __weak smp_setup_processor_id(void)  /* 注意这里的'__weak'。它被 arch/arm/kernel/setup.c 或 arch/arm64/kernel/setup.c 里的同名函数所重载 */
 {
 }
 
@@ -578,27 +578,27 @@ asmlinkage __visible void __init start_kernel(void)
 	char *command_line;
 	char *after_dashes;
 
-	set_task_stack_end_magic(&init_task);
-	smp_setup_processor_id();
-	debug_objects_early_init();
+	set_task_stack_end_magic(&init_task);  /* 在栈底设置魔数，以便检查栈是否损坏。init_task的定义：init/init_task.c line 56 */
+	smp_setup_processor_id();  /* defined in arch/arm(64)/kernel/setup.c */
+	debug_objects_early_init();  /* defined in lib/debugobjects.c */
 
 	cgroup_init_early();
 
 	local_irq_disable();
-	early_boot_irqs_disabled = true;
+	early_boot_irqs_disabled = true;  /* defined in this file Line118. This flag is cleared in current function Line703  */
 
 	/*
 	 * Interrupts are still disabled. Do necessary setups, then
 	 * enable them.
 	 */
-	boot_cpu_init();
-	page_address_init();
+	boot_cpu_init();  /* Activate the first processor */
+	page_address_init();  /* mm/highmem.c */
 	pr_notice("%s", linux_banner);
 	early_security_init();
-	setup_arch(&command_line);
-	setup_command_line(command_line);
-	setup_nr_cpu_ids();
-	setup_per_cpu_areas();
+	setup_arch(&command_line);  /* 为局部变量command_line赋值  。   */
+	setup_command_line(command_line);  /* ？？？？？将command_line备份到其他多个变量里 */
+	setup_nr_cpu_ids();  /* 为全局变量nr_cpu_ids赋值。其值为硬件CPU数目，注意不是online CPU数目 */
+	setup_per_cpu_areas();  /* 为per CPU变量预留空间。多核下，arm架构 mm/percpu.c:2960，arm64架构 mm/percpu.c:2960 或 /arch/arm64/mm/numa.c:140 */
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 	boot_cpu_hotplug_init();
 
@@ -607,15 +607,15 @@ asmlinkage __visible void __init start_kernel(void)
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
-	jump_label_init();
-	parse_early_param();
-	after_dashes = parse_args("Booting kernel",
-				  static_command_line, __start___param,
-				  __stop___param - __start___param,
+	jump_label_init();  /* 性能优化相关，无需关心 */
+	parse_early_param();  /* 解析并执行boot_command_line里的early param */
+	after_dashes = parse_args("Booting kernel",  /* 此函数解析到"--"即停止 */
+				  static_command_line, __start___param,  /* 解析static_command_line，匹配__start___param[]里的参数名；若匹配失败，则执行unknown_bootoption() */
+				  __stop___param - __start___param,  /* __start___param和__stop___param都是elf里的段 */
 				  -1, -1, NULL, &unknown_bootoption);
-	if (!IS_ERR_OR_NULL(after_dashes))
-		parse_args("Setting init args", after_dashes, NULL, 0, -1, -1,
-			   NULL, set_init_arg);
+	if (!IS_ERR_OR_NULL(after_dashes))  /* "--"之后还有内容 */
+		parse_args("Setting init args", after_dashes, NULL, 0, -1, -1,  /* 解析"--"之后的内容 */
+			   NULL, set_init_arg);  /* 执行set_init_arg() */
 
 	/*
 	 * These use large bootmem allocations and must precede
@@ -700,7 +700,7 @@ asmlinkage __visible void __init start_kernel(void)
 	call_function_init();
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");
 
-	early_boot_irqs_disabled = false;
+	early_boot_irqs_disabled = false;  /* This flag was set earlier in current function */
 	local_irq_enable();
 
 	kmem_cache_init_late();

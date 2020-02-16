@@ -161,7 +161,7 @@ do {						\
 		unsigned long _flags;			\
 		raw_local_save_flags(_flags);		\
 		raw_irqs_disabled_flags(_flags);	\
-	})
+	})  /* 检查全局IRQ是否被禁用了，返回true或false */
 #else /* !CONFIG_TRACE_IRQFLAGS_SUPPORT */
 #define irqs_disabled()	raw_irqs_disabled()
 #endif /* CONFIG_TRACE_IRQFLAGS_SUPPORT */

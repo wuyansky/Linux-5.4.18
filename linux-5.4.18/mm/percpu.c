@@ -2930,7 +2930,7 @@ out_free_ar:
 }
 #endif /* BUILD_PAGE_FIRST_CHUNK */
 
-#ifndef	CONFIG_HAVE_SETUP_PER_CPU_AREA
+#ifndef	CONFIG_HAVE_SETUP_PER_CPU_AREA  /* arm无此配置项，arm64有 */
 /*
  * Generic SMP percpu area setup.
  *
@@ -2975,7 +2975,7 @@ void __init setup_per_cpu_areas(void)
 
 	delta = (unsigned long)pcpu_base_addr - (unsigned long)__per_cpu_start;
 	for_each_possible_cpu(cpu)
-		__per_cpu_offset[cpu] = delta + pcpu_unit_offsets[cpu];
+		__per_cpu_offset[cpu] = delta + pcpu_unit_offsets[cpu];  /* __per_cpu_offset在上面定义 */
 }
 #endif	/* CONFIG_HAVE_SETUP_PER_CPU_AREA */
 

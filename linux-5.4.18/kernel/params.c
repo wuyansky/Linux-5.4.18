@@ -81,7 +81,7 @@ static char dash2underscore(char c)
 	return c;
 }
 
-bool parameqn(const char *a, const char *b, size_t n)
+bool parameqn(const char *a, const char *b, size_t n)  /* 检查长度为n的字符串a和b是否完全相等（不区分'-'和'_'） */
 {
 	size_t i;
 
@@ -92,7 +92,7 @@ bool parameqn(const char *a, const char *b, size_t n)
 	return true;
 }
 
-bool parameq(const char *a, const char *b)
+bool parameq(const char *a, const char *b)  /* 检查字符串a和b是否完全相等（不区分'-'和'_'） */
 {
 	return parameqn(a, b, strlen(a)+1);
 }
@@ -127,46 +127,46 @@ static int parse_one(char *param,
 	int err;
 
 	/* Find parameter */
-	for (i = 0; i < num_params; i++) {
-		if (parameq(param, params[i].name)) {
-			if (params[i].level < min_level
+	for (i = 0; i < num_params; i++) {  /* 遍历每一组参数 */
+		if (parameq(param, params[i].name)) {  /* 匹配参数名。若匹配到了，则执行此分支并返回 */
+			if (params[i].level < min_level  /* 异常检查，不管它 */
 			    || params[i].level > max_level)
 				return 0;
 			/* No one handled NULL, so do it here. */
-			if (!val &&
+			if (!val &&  /* 异常检查，不管它 */
 			    !(params[i].ops->flags & KERNEL_PARAM_OPS_FL_NOARG))
 				return -EINVAL;
 			pr_debug("handling %s with %p\n", param,
 				params[i].ops->set);
-			kernel_param_lock(params[i].mod);
+			kernel_param_lock(params[i].mod);  /* 加锁，不管它 */
 			if (param_check_unsafe(&params[i]))
-				err = params[i].ops->set(val, &params[i]);
+				err = params[i].ops->set(val, &params[i]);  /* 这一句是核心！将val设置给params[i] （前面已经匹配过param名字了） */
 			else
 				err = -EPERM;
-			kernel_param_unlock(params[i].mod);
-			return err;
+			kernel_param_unlock(params[i].mod);  /* 解锁，不管它 */
+			return err;  /* 期待的返回位置 */
 		}
 	}
 
-	if (handle_unknown) {
+	if (handle_unknown) {  /* 如果匹配参数名失败，则执行此逻辑 */
 		pr_debug("doing %s: %s='%s'\n", doing, param, val);
-		return handle_unknown(param, val, doing, arg);
+		return handle_unknown(param, val, doing, arg);  /*  执行完立即返回 */
 	}
 
-	pr_debug("Unknown argument '%s'\n", param);
+	pr_debug("Unknown argument '%s'\n", param);  /* 出错了 */
 	return -ENOENT;
 }
 
-/* Args looks like "foo=bar,bar2 baz=fuz wiz". */
-char *parse_args(const char *doing,
-		 char *args,
-		 const struct kernel_param *params,
-		 unsigned num,
-		 s16 min_level,
-		 s16 max_level,
-		 void *arg,
-		 int (*unknown)(char *param, char *val,
-				const char *doing, void *arg))
+/* Args looks like "foo=bar,bar2 baz=fuz wiz". */  /* 这个例子里以空格分隔了三组键值对  */
+char *parse_args(const char *doing,  /* 用于打印的字符串，表明当前在进行的操作的名称 */
+		 char *args,  /* 要解析的命令行字符串。以空格分隔为多组键值对 */
+		 const struct kernel_param *params,  /* 预先填好的结构体数组，里面包含了每个参数的名字等信息。每个参数占一个数组元素 */
+		 unsigned num,  /* 数组params[]的元素个数 */
+		 s16 min_level,  /* 不清楚干啥用的 */
+		 s16 max_level,  /* 不清楚干啥用的 */
+		 void *arg,  /* 回调函数unknown的参数。在unknown()执行的时候，传递给它 */
+		 int (*unknown)(char *param, char *val,  /* params[i]里的参数名和解析到的参数名不匹配的时候，执行此回调函数 */
+				const char *doing, void *arg))  /* 回调函数的前两个参数param、val是解析到的参数名和参数值，doing和arg是本函数（parse_args）的参数中的两个 */
 {
 	char *param, *val, *err = NULL;
 
@@ -180,14 +180,14 @@ char *parse_args(const char *doing,
 		int ret;
 		int irq_was_disabled;
 
-		args = next_arg(args, &param, &val);
+		args = next_arg(args, &param, &val);  /*解析args，得到一组键值对：参数名param和参数值val。返回下一组键值对的起始指针 */
 		/* Stop at -- */
-		if (!val && strcmp(param, "--") == 0)
-			return err ?: args;
-		irq_was_disabled = irqs_disabled();
-		ret = parse_one(param, val, doing, params, num,
-				min_level, max_level, arg, unknown);
-		if (irq_was_disabled && !irqs_disabled())
+		if (!val && strcmp(param, "--") == 0)  /* 停止解析 */
+			return err ?: args;  /* 相当于 err ? err : args */
+		irq_was_disabled = irqs_disabled();  /* 检查全局中断是否被关闭了（期望是关闭的） */
+		ret = parse_one(param, val, doing, params, num,  /* 这是最关键的一个函数！ */
+				min_level, max_level, arg, unknown);  /* 其基本逻辑就是在params[]里匹配参数名param，若匹配成功，则将val设置进去；若匹配失败，则执行unknown函数 */
+		if (irq_was_disabled && !irqs_disabled())  /* 这里再次检查全局中断标志，看它是否被上面的语句打开了 */
 			pr_warn("%s: option '%s' enabled irq's!\n",
 				doing, param);
 
