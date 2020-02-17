@@ -1078,7 +1078,7 @@ void __init setup_arch(char **cmdline_p)
 	const struct machine_desc *mdesc;
 
 	setup_processor();
-	mdesc = setup_machine_fdt(__atags_pointer);
+	mdesc = setup_machine_fdt(__atags_pointer);  /* __atags_pointer是设备树在内存里的物理地址。见arch/arm/kernel/head-common.S: .long __machine_arch_type @ r1 */
 	if (!mdesc)
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);
 	if (!mdesc) {

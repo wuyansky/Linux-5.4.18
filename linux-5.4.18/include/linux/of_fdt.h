@@ -30,7 +30,7 @@ extern void *of_fdt_unflatten_tree(const unsigned long *blob,
 /* TBD: Temporary export of fdt globals - remove when code fully merged */
 extern int __initdata dt_root_addr_cells;
 extern int __initdata dt_root_size_cells;
-extern void *initial_boot_params;
+extern void *initial_boot_params;  /* 二进制的设备树的（虚拟）起始地址。在drivers/of/fdt.c: early_init_dt_verify()里被赋值 */
 
 extern char __dtb_start[];
 extern char __dtb_end[];

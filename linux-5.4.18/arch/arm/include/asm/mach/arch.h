@@ -70,7 +70,7 @@ extern const struct machine_desc *machine_desc;
 /*
  * Machine type table - also only accessible during boot
  */
-extern const struct machine_desc __arch_info_begin[], __arch_info_end[];
+extern const struct machine_desc __arch_info_begin[], __arch_info_end[];  /* elf里的一个段，这个段里保存着很多struct machine_desc。段起始地址为__arch_info_begin，结束地址为__arch_info_end */
 #define for_each_machine_desc(p)			\
 	for (p = __arch_info_begin; p < __arch_info_end; p++)
 

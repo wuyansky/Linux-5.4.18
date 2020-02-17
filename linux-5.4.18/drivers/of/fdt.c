@@ -626,26 +626,26 @@ void __init early_init_fdt_reserve_self(void)
  * used to extract the memory information at boot before we can
  * unflatten the tree
  */
-int __init of_scan_flat_dt(int (*it)(unsigned long node,
+int __init of_scan_flat_dt(int (*it)(unsigned long node,  /* 回调函数。在搜索设备树时，对每一个节点调用一次 */
 				     const char *uname, int depth,
 				     void *data),
-			   void *data)
-{
-	const void *blob = initial_boot_params;
+			   void *data)  /* 要传递给回调函数的最后一个参数 */
+{   /* 功能：搜索设备树，针对每个节点，调用回调函数it，并将参数data传递给该回调函数，直到回调函数返回成功为止。返回：true或false */
+	const void *blob = initial_boot_params;  /* blob是二进制的设备树在内存中的首地址（虚拟），可供解析 */
 	const char *pathp;
 	int offset, rc = 0, depth = -1;
 
 	if (!blob)
 		return 0;
 
-	for (offset = fdt_next_node(blob, -1, &depth);
-	     offset >= 0 && depth >= 0 && !rc;
+	for (offset = fdt_next_node(blob, -1, &depth);  /* 从根节点开始遍历每个节点，得到每个节点的偏移和深度 */
+	     offset >= 0 && depth >= 0 && !rc;  /* 注意这里的停止条件：rc!=0，也就是说一旦回调函数执行成功，循环就停止了 */
 	     offset = fdt_next_node(blob, offset, &depth)) {
 
-		pathp = fdt_get_name(blob, offset, NULL);
-		if (*pathp == '/')
-			pathp = kbasename(pathp);
-		rc = it(offset, pathp, depth, data);
+		pathp = fdt_get_name(blob, offset, NULL);  /* 根据偏移，获取当前节点的名字pathp */
+		if (*pathp == '/')  /* 绝对路径？ */
+			pathp = kbasename(pathp);  /* 去掉路径，只留下最后一部分节点名 */
+		rc = it(offset, pathp, depth, data);  /* 针对当前节点，调用回调函数 */
 	}
 	return rc;
 }
@@ -707,10 +707,10 @@ unsigned long __init of_get_flat_dt_root(void)
  * This function can be used within scan_flattened_dt callback to get
  * access to properties
  */
-const void *__init of_get_flat_dt_prop(unsigned long node, const char *name,
-				       int *size)
+const void *__init of_get_flat_dt_prop(unsigned long node, const char *name,  /* node是节点相对二进制设备树的起始位置的偏移量（从这里开始查找），name是要查找的属性名 */
+				       int *size)  /* size是（传出的）找到的属性的值的长度 */
 {
-	return fdt_getprop(initial_boot_params, node, name, size);
+	return fdt_getprop(initial_boot_params, node, name, size);  /* 返回属性的值的指针 */
 }
 
 /**
@@ -723,22 +723,22 @@ const void *__init of_get_flat_dt_prop(unsigned long node, const char *name,
  * On match, returns a non-zero value with smaller values returned for more
  * specific compatible values.
  */
-static int of_fdt_is_compatible(const void *blob,
-		      unsigned long node, const char *compat)
-{
+static int of_fdt_is_compatible(const void *blob,  /* blob：二进制的设备树的（虚拟）起始地址 */
+		      unsigned long node, const char *compat)  /* node：开始查找的偏移量；compat：待匹配的"compatible"属性 */
+{	/* 功能：在设备数blob里，从偏移为node处找到"compatible"节点，将其值（可能有多个）分别与compat进行比较。返回：0：匹配失败；其他正整数：匹配成功（数值越小，说明匹配度越高） */
 	const char *cp;
 	int cplen;
 	unsigned long l, score = 0;
 
-	cp = fdt_getprop(blob, node, "compatible", &cplen);
-	if (cp == NULL)
+	cp = fdt_getprop(blob, node, "compatible", &cplen);  /* 获取"compatible"属性的值cp以及长度cplen */
+	if (cp == NULL)  /* 得到的cp类似于 "allwinner,sun8i1\0allwinner,sun8i2\0" ，即多个字符串连在一起，中间以'\0'分隔 */
 		return 0;
 	while (cplen > 0) {
-		score++;
-		if (of_compat_cmp(cp, compat, strlen(compat)) == 0)
-			return score;
-		l = strlen(cp) + 1;
-		cp += l;
+		score++;  /* 随着比较次数的增多，score逐次增大（score越小，说明匹配度越高） */
+		if (of_compat_cmp(cp, compat, strlen(compat)) == 0)  /* 不区分大小写，比较cp和compat */
+			return score;  /* 如果两者完全相等，则返回 */
+		l = strlen(cp) + 1;  /* 得出当前"compatible"值的长度。这里的'+1'其实是为了跳过字符串末尾的'\0' */
+		cp += l;  /* 跳过当前的"compatible"值，进入下一轮比较 */
 		cplen -= l;
 	}
 
@@ -758,21 +758,21 @@ int __init of_flat_dt_is_compatible(unsigned long node, const char *compat)
 /**
  * of_flat_dt_match - Return true if node matches a list of compatible values
  */
-static int __init of_flat_dt_match(unsigned long node, const char *const *compat)
-{
+static int __init of_flat_dt_match(unsigned long node, const char *const *compat)  /* node: 节点偏移； char *compat[]: 用于匹配的字符串数组，以NULL结尾 */
+{	/* 功能：从设备树偏移为node处开始，针对compat[]的每个元素，逐个匹配。返回：匹配失败返回0，匹配成功返回正整数，数值越小说明匹配度越高 */
 	unsigned int tmp, score = 0;
 
 	if (!compat)
 		return 0;
 
-	while (*compat) {
-		tmp = of_fdt_is_compatible(initial_boot_params, node, *compat);
-		if (tmp && (score == 0 || (tmp < score)))
-			score = tmp;
+	while (*compat) {  /* 遍历compat[] */
+		tmp = of_fdt_is_compatible(initial_boot_params, node, *compat);  /* 将compat[i]与设备树里的"compatible"字段进行匹配 */
+		if (tmp && (score == 0 || (tmp < score)))  /* 如果匹配度更高 */
+			score = tmp;  /* 则更新score */
 		compat++;
 	}
 
-	return score;
+	return score;  /* 返回匹配度最高的score */
 }
 
 /**
@@ -793,7 +793,7 @@ struct fdt_scan_status {
 };
 
 const char * __init of_flat_dt_get_machine_name(void)
-{
+{   /* 从设备树的根节点下查找节点"model"或"compatible"，返回其值 */
 	const char *name;
 	unsigned long dt_root = of_get_flat_dt_root();
 
@@ -814,28 +814,28 @@ const char * __init of_flat_dt_get_machine_name(void)
  */
 const void * __init of_flat_dt_match_machine(const void *default_match,
 		const void * (*get_next_compat)(const char * const**))
-{
+{	/* 功能：将C代码注册的struct machine_desc[]的每个元素的".dt_compat"属性和设备树里的"compatible"属性进行交叉匹配，以得到最佳匹配。返回：匹配成功则返回最佳匹配的machine_desc结构体的指针，匹配失败则返回default_match */
 	const void *data = NULL;
 	const void *best_data = default_match;
 	const char *const *compat;
 	unsigned long dt_root;
 	unsigned int best_score = ~1, score = 0;
 
-	dt_root = of_get_flat_dt_root();
-	while ((data = get_next_compat(&compat))) {
-		score = of_flat_dt_match(dt_root, compat);
-		if (score > 0 && score < best_score) {
+	dt_root = of_get_flat_dt_root();  /* 找到根节点 */
+	while ((data = get_next_compat(&compat))) {		/* 遍历（由C代码）已注册的machine_desc列表。针对每个元素，取出其compat值，并返回其machine_desc结构体 */
+		score = of_flat_dt_match(dt_root, compat);	/* 针对上面得到的compat，在设备树里（从根节点开始）匹配"compatible"属性 */
+		if (score > 0 && score < best_score) {		/* 如果匹配度更高，则更新best_data和best_score */
 			best_data = data;
 			best_score = score;
 		}
-	}
-	if (!best_data) {
+	}	/* 循环完毕后，best_data是匹配度最高的machine_desc结构体的指针 */
+	if (!best_data) {  /* 异常：匹配失败 */
 		const char *prop;
 		int size;
 
 		pr_err("\n unrecognized device tree list:\n[ ");
 
-		prop = of_get_flat_dt_prop(dt_root, "compatible", &size);
+		prop = of_get_flat_dt_prop(dt_root, "compatible", &size);  /* 打印出对应的"compatible"属性列表 */
 		if (prop) {
 			while (size > 0) {
 				printk("'%s' ", prop);
@@ -849,7 +849,7 @@ const void * __init of_flat_dt_match_machine(const void *default_match,
 
 	pr_info("Machine model: %s\n", of_flat_dt_get_machine_name());
 
-	return best_data;
+	return best_data;  /* 正常逻辑 */
 }
 
 #ifdef CONFIG_BLK_DEV_INITRD
@@ -880,19 +880,19 @@ static void __init early_init_dt_check_for_initrd(unsigned long node)
 
 	pr_debug("Looking for initrd properties... ");
 
-	prop = of_get_flat_dt_prop(node, "linux,initrd-start", &len);
-	if (!prop)
+	prop = of_get_flat_dt_prop(node, "linux,initrd-start", &len);  /* 在设备树里查找此属性，得到此属性的值（数值，非字符串）的起始地址和长度 */
+	if (!prop)  /* 没找到 */
 		return;
-	start = of_read_number(prop, len/4);
+	start = of_read_number(prop, len/4);  /* 对属性的值进行处理，得到u64型的数值，即initrd的物理起始地址 */
 
 	prop = of_get_flat_dt_prop(node, "linux,initrd-end", &len);
 	if (!prop)
 		return;
-	end = of_read_number(prop, len/4);
+	end = of_read_number(prop, len/4);  /* 同上，得到initrd的物理结束地址 */
 
-	__early_init_dt_declare_initrd(start, end);
-	phys_initrd_start = start;
-	phys_initrd_size = end - start;
+	__early_init_dt_declare_initrd(start, end);  /* 通过物理地址得到虚拟地址。仅对ARM64有效 */
+	phys_initrd_start = start;  /* 将物理起始地址备份到全局变量 */
+	phys_initrd_size = end - start;  /* 将长度备份到全局变量 */
 
 	pr_debug("initrd_start=0x%llx  initrd_end=0x%llx\n",
 		 (unsigned long long)start, (unsigned long long)end);
@@ -957,9 +957,9 @@ int __init early_init_dt_scan_chosen_stdout(void)
 /**
  * early_init_dt_scan_root - fetch the top level address and size cells
  */
-int __init early_init_dt_scan_root(unsigned long node, const char *uname,
-				   int depth, void *data)
-{
+int __init early_init_dt_scan_root(unsigned long node, const char *uname,  /* node是节点偏移量；uname参数未使用 */ 
+				   int depth, void *data)  /* depth是当前节点的深度；data参数未使用 */
+{   /* 功能：在设备树顶层搜索节点"#size-cells"和"#address-cells"，取出其值，放到全局变量dt_root_size_cells和dt_root_addr_cells里。若没有匹配到对应节点，则使用默认值 */
 	const __be32 *prop;
 
 	if (depth != 0)
@@ -994,32 +994,32 @@ u64 __init dt_mem_next_cell(int s, const __be32 **cellp)
  * early_init_dt_scan_memory - Look for and parse memory nodes
  */
 int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
-				     int depth, void *data)
-{
+				     int depth, void *data)  /* data参数未使用 */
+{   /* 功能：从设备树里解析内存信息，并将各段内存注册到系统里 */
 	const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
 	const __be32 *reg, *endp;
 	int l;
 	bool hotpluggable;
 
 	/* We are scanning "memory" nodes only */
-	if (type == NULL || strcmp(type, "memory") != 0)
-		return 0;
+	if (type == NULL || strcmp(type, "memory") != 0)  /* 要求"device_type"节点存在，且其值为"memory" */
+		return 0;  /* 不满足要求 */
 
-	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);
+	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);  /* 检查节点"linux,usable-memory"是否存在 */
 	if (reg == NULL)
-		reg = of_get_flat_dt_prop(node, "reg", &l);
+		reg = of_get_flat_dt_prop(node, "reg", &l);  /* 检查节点"reg"是否存在 */
 	if (reg == NULL)
-		return 0;
+		return 0;  /* 如果上面两个节点都不存在，则失败；否则，得到对应节点的值的指针reg */
 
 	endp = reg + (l / sizeof(__be32));
 	hotpluggable = of_get_flat_dt_prop(node, "hotpluggable", NULL);
 
 	pr_debug("memory scan node %s, reg size %d,\n", uname, l);
 
-	while ((endp - reg) >= (dt_root_addr_cells + dt_root_size_cells)) {
+	while ((endp - reg) >= (dt_root_addr_cells + dt_root_size_cells)) {  /* 遍历每一段内存 */
 		u64 base, size;
 
-		base = dt_mem_next_cell(dt_root_addr_cells, &reg);
+		base = dt_mem_next_cell(dt_root_addr_cells, &reg);  /* 得到当前这段内存的（物理）基地址和长度 */
 		size = dt_mem_next_cell(dt_root_size_cells, &reg);
 
 		if (size == 0)
@@ -1027,12 +1027,12 @@ int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
 		pr_debug(" - %llx ,  %llx\n", (unsigned long long)base,
 		    (unsigned long long)size);
 
-		early_init_dt_add_memory_arch(base, size);
+		early_init_dt_add_memory_arch(base, size);  /* 将这段内存添加到系统可用内存里面去 */
 
 		if (!hotpluggable)
 			continue;
 
-		if (early_init_dt_mark_hotplug_memory_arch(base, size))
+		if (early_init_dt_mark_hotplug_memory_arch(base, size))  /* 将这段内存标记为“可热插拔的” */
 			pr_warn("failed to mark hotplug range 0x%llx - 0x%llx\n",
 				base, base + size);
 	}
@@ -1040,47 +1040,47 @@ int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
 	return 0;
 }
 
-int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
-				     int depth, void *data)
-{
+int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,  /* node：即offset； uname：节点名*/
+				     int depth, void *data)  /* depth：搜索深度；data：传出参数，指向得到的属性值 */
+{   /* 此函数的基本功能：解析chosen节点，并传出最终生效的命令行参数。返回值：true或false */
 	int l;
 	const char *p;
 	const void *rng_seed;
 
 	pr_debug("search \"chosen\", depth: %d, uname: %s\n", depth, uname);
 
-	if (depth != 1 || !data ||
-	    (strcmp(uname, "chosen") != 0 && strcmp(uname, "chosen@0") != 0))
-		return 0;
+	if (depth != 1 || !data ||  /* 检查节点所在的深度 */
+	    (strcmp(uname, "chosen") != 0 && strcmp(uname, "chosen@0") != 0))  /* 检查节点名 */
+		return 0;  /* 检查未通过 */
 
-	early_init_dt_check_for_initrd(node);
+	early_init_dt_check_for_initrd(node);  /* 检查是否有dts里是否有initrd的信息，若有，则将其保存到全局变量里 */
 
 	/* Retrieve command line */
-	p = of_get_flat_dt_prop(node, "bootargs", &l);
-	if (p != NULL && l > 0)
-		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));
+	p = of_get_flat_dt_prop(node, "bootargs", &l);  /* 查找bootargs节点，得到其值（字符串）为p，长度为l */
+	if (p != NULL && l > 0)  /* 有效 */
+		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));  /* 将值赋给data */
 
 	/*
 	 * CONFIG_CMDLINE is meant to be a default in case nothing else
 	 * managed to set the command line, unless CONFIG_CMDLINE_FORCE
 	 * is set in which case we override whatever was found earlier.
 	 */
-#ifdef CONFIG_CMDLINE
+#ifdef CONFIG_CMDLINE  /* 如果内核里配置了该项（其值就是命令内容） */
 #if defined(CONFIG_CMDLINE_EXTEND)
 	strlcat(data, " ", COMMAND_LINE_SIZE);
-	strlcat(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
+	strlcat(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);  /* 追加到原有的命令行之后 */
 #elif defined(CONFIG_CMDLINE_FORCE)
-	strlcpy(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
+	strlcpy(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);  /* 强制覆盖原有的命令行 */
 #else
 	/* No arguments from boot loader, use kernel's  cmdl*/
-	if (!((char *)data)[0])
-		strlcpy(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
+	if (!((char *)data)[0])  /* 从设备树（及U-Boot）里没有解析到命令行 */
+		strlcpy(data, CONFIG_CMDLINE, COMMAND_LINE_SIZE);  /* 使用内核里配置的命令行 */
 #endif
 #endif /* CONFIG_CMDLINE */
 
 	pr_debug("Command line is: %s\n", (char*)data);
 
-	rng_seed = of_get_flat_dt_prop(node, "rng-seed", &l);
+	rng_seed = of_get_flat_dt_prop(node, "rng-seed", &l);  /* 随机数相关，不用管 */
 	if (rng_seed && l > 0) {
 		add_bootloader_randomness(rng_seed, l);
 
@@ -1093,7 +1093,7 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
 	}
 
 	/* break now */
-	return 1;
+	return 1;  /* 正常返回 */
 }
 
 #ifndef MIN_MEMBLOCK_ADDR
@@ -1103,7 +1103,7 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
 #define MAX_MEMBLOCK_ADDR	((phys_addr_t)~0)
 #endif
 
-void __init __weak early_init_dt_add_memory_arch(u64 base, u64 size)
+void __init __weak early_init_dt_add_memory_arch(u64 base, u64 size)  /* 注意：这里的base是物理地址！ */
 {
 	const u64 phys_offset = MIN_MEMBLOCK_ADDR;
 
@@ -1142,7 +1142,7 @@ void __init __weak early_init_dt_add_memory_arch(u64 base, u64 size)
 		size -= phys_offset - base;
 		base = phys_offset;
 	}
-	memblock_add(base, size);
+	memblock_add(base, size);  /* 前面的都是一些检查和预处理。这一句才是主逻辑！ */
 }
 
 int __init __weak early_init_dt_mark_hotplug_memory_arch(u64 base, u64 size)
@@ -1169,8 +1169,8 @@ static void * __init early_init_dt_alloc_memory_arch(u64 size, u64 align)
 	return ptr;
 }
 
-bool __init early_init_dt_verify(void *params)
-{
+bool __init early_init_dt_verify(void *params)  /* params是设备树的（虚拟）起始地址 */
+{	/* 校验二进制设备树是否有效 */
 	if (!params)
 		return false;
 
@@ -1179,7 +1179,7 @@ bool __init early_init_dt_verify(void *params)
 		return false;
 
 	/* Setup flat device-tree pointer */
-	initial_boot_params = params;
+	initial_boot_params = params;  /* 将首地址保存到全局变量里 */
 	of_fdt_crc32 = crc32_be(~0, initial_boot_params,
 				fdt_totalsize(initial_boot_params));
 	return true;
@@ -1187,19 +1187,19 @@ bool __init early_init_dt_verify(void *params)
 
 
 void __init early_init_dt_scan_nodes(void)
-{
+{   /* 从设备树里获取内核命令行、"#size-cells"和"#address-cells"以及内存信息，并将其保存到全局变量或注册到系统里 */
 	int rc = 0;
 
 	/* Retrieve various information from the /chosen node */
-	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);
+	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);  /* 搜索设备树，获取最终生效的命令行参数，填充到boot_command_line[]里 */
 	if (!rc)
 		pr_warn("No chosen node found, continuing without\n");
 
 	/* Initialize {size,address}-cells info */
-	of_scan_flat_dt(early_init_dt_scan_root, NULL);
+	of_scan_flat_dt(early_init_dt_scan_root, NULL);  /* 获取设备树顶层的"#size-cells"和"#address-cells"属性，放到全局变量dt_root_size_cells和dt_root_addr_cells里。若没有匹配到对应节点，则使用默认值 */
 
 	/* Setup memory, calling early_init_dt_add_memory_arch */
-	of_scan_flat_dt(early_init_dt_scan_memory, NULL);
+	of_scan_flat_dt(early_init_dt_scan_memory, NULL);  /* 从设备树里解析内存信息，并将各段内存注册到系统里 */
 }
 
 bool __init early_init_dt_scan(void *params)

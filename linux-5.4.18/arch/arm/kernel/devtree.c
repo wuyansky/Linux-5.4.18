@@ -189,7 +189,7 @@ bool arch_match_cpu_phys_id(int cpu, u64 phys_id)
 }
 
 static const void * __init arch_get_next_mach(const char *const **match)
-{
+{	/* 功能：针对C代码注册struct machine_desc[]，获取其各个元素的.dt_compat属性值，通过参数match传出。每调用一次本函数，就向后迭代一次。返回：当前struct machine_desc的指针 */
 	static const struct machine_desc *mdesc = __arch_info_begin;
 	const struct machine_desc *m = mdesc;
 
@@ -208,11 +208,11 @@ static const void * __init arch_get_next_mach(const char *const **match)
  * If a dtb was passed to the kernel in r2, then use it to choose the
  * correct machine_desc and to setup the system.
  */
-const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)
-{
+const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)  /* dt_phys：二进制的设备树的（物理）起始地址 */
+{	/* 功能：匹配machine的"compatible"属性，顺便从设备树里获取内核命令行、"#size-cells"和"#address-cells"以及内存信息，并将其保存到全局变量或注册到系统里。返回：匹配成功返回struct machine_desc的指针；失败返回NULL */
 	const struct machine_desc *mdesc, *mdesc_best = NULL;
 
-#if defined(CONFIG_ARCH_MULTIPLATFORM) || defined(CONFIG_ARM_SINGLE_ARMV7M)
+#if defined(CONFIG_ARCH_MULTIPLATFORM) || defined(CONFIG_ARM_SINGLE_ARMV7M)  /* 对于ARM(64)平台，这段代码无效 */
 	DT_MACHINE_START(GENERIC_DT, "Generic DT based system")
 		.l2c_aux_val = 0x0,
 		.l2c_aux_mask = ~0x0,
@@ -224,9 +224,9 @@ const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)
 	if (!dt_phys || !early_init_dt_verify(phys_to_virt(dt_phys)))
 		return NULL;
 
-	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);
+	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);  /* 将匹配C代码注册的machine与设备树里的"compatible"属性进行匹配，得到最佳匹配，返回其struct machine_desc的指针 */
 
-	if (!mdesc) {
+	if (!mdesc) {  /* 匹配失败，则打印出错误信息 */
 		const char *prop;
 		int size;
 		unsigned long dt_root;
@@ -250,7 +250,7 @@ const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)
 	if (mdesc->dt_fixup)
 		mdesc->dt_fixup();
 
-	early_init_dt_scan_nodes();
+	early_init_dt_scan_nodes();  /* 从设备树里获取内核命令行、"#size-cells"和"#address-cells"以及内存信息，并将其保存到全局变量或注册到系统里 */
 
 	/* Change machine number to match the mdesc we're using */
 	__machine_arch_type = mdesc->nr;

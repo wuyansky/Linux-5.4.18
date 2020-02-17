@@ -176,7 +176,7 @@ uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset)
 	return tag;
 }
 
-int fdt_check_node_offset_(const void *fdt, int offset)
+int fdt_check_node_offset_(const void *fdt, int offset)  /* 检查参数offset是否合法。返回负值则为非法 */
 {
 	if ((offset < 0) || (offset % FDT_TAGSIZE)
 	    || (fdt_next_tag(fdt, offset, &offset) != FDT_BEGIN_NODE))
@@ -185,7 +185,7 @@ int fdt_check_node_offset_(const void *fdt, int offset)
 	return offset;
 }
 
-int fdt_check_prop_offset_(const void *fdt, int offset)
+int fdt_check_prop_offset_(const void *fdt, int offset)  /* 检查参数offset是否合法。返回负值则为非法 */
 {
 	if ((offset < 0) || (offset % FDT_TAGSIZE)
 	    || (fdt_next_tag(fdt, offset, &offset) != FDT_PROP))
@@ -194,14 +194,14 @@ int fdt_check_prop_offset_(const void *fdt, int offset)
 	return offset;
 }
 
-int fdt_next_node(const void *fdt, int offset, int *depth)
-{
+int fdt_next_node(const void *fdt, int offset, int *depth)  /* fdt: 设备树的首地址；offset：从此偏移开始查找；depth - 传出参数，用于告知调用方找到的节点的深度 */
+{  /* 功能：从指定的偏移开始，找到第一个节点，然后返回。 返回值：成功，返回找到的节点的偏移；失败返回负值 */
 	int nextoffset = 0;
 	uint32_t tag;
 
 	if (offset >= 0)
-		if ((nextoffset = fdt_check_node_offset_(fdt, offset)) < 0)
-			return nextoffset;
+		if ((nextoffset = fdt_check_node_offset_(fdt, offset)) < 0)  /* 检查offset，并得到第一个节点的偏移 */
+			return nextoffset;  /* 异常，返回负值 */
 
 	do {
 		offset = nextoffset;

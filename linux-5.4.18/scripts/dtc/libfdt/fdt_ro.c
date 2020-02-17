@@ -282,9 +282,9 @@ int fdt_path_offset(const void *fdt, const char *path)
 	return fdt_path_offset_namelen(fdt, path, strlen(path));
 }
 
-const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
-{
-	const struct fdt_node_header *nh = fdt_offset_ptr_(fdt, nodeoffset);
+const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)  /* fdt：二进制的设备树的起始地址（虚拟）；nodeoffset：某个节点相对起始地址的偏移；len：传出参数，用于告知调用者节点名的长度 */
+{   /* 功能：通过设备树的首地址和某个节点的偏移，得到其节点名和长度 */
+	const struct fdt_node_header *nh = fdt_offset_ptr_(fdt, nodeoffset);  /* 根据起始地址和偏移，填充对应的节点的数据结构 */
 	const char *nameptr;
 	int err;
 
@@ -292,9 +292,9 @@ const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
 	    || ((err = fdt_check_node_offset_(fdt, nodeoffset)) < 0))
 			goto fail;
 
-	nameptr = nh->name;
+	nameptr = nh->name;  /* 获得节点名 */
 
-	if (fdt_version(fdt) < 0x10) {
+	if (fdt_version(fdt) < 0x10) {  /* 为了向前兼容，无需理会 */
 		/*
 		 * For old FDT versions, match the naming conventions of V16:
 		 * give only the leaf name (after all /). The actual tree
@@ -310,9 +310,9 @@ const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
 	}
 
 	if (len)
-		*len = strlen(nameptr);
+		*len = strlen(nameptr);  /* 将节点名的长度传出 */
 
-	return nameptr;
+	return nameptr;  /* 返回节点名 */
 
  fail:
 	if (len)
@@ -479,7 +479,7 @@ const void *fdt_getprop_by_offset(const void *fdt, int offset,
 
 const void *fdt_getprop(const void *fdt, int nodeoffset,
 			const char *name, int *lenp)
-{
+{	/* 从设备树fdt里偏移为nodeoffset处开始查找名为name的节点，返回节点的值，得到值的长度lenp */
 	return fdt_getprop_namelen(fdt, nodeoffset, name, strlen(name), lenp);
 }
 
