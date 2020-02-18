@@ -121,7 +121,7 @@ static int __init parse_tag_revision(const struct tag *tag)
 __tagtable(ATAG_REVISION, parse_tag_revision);
 
 static int __init parse_tag_cmdline(const struct tag *tag)
-{
+{	/* 根据内核配置，决定使用哪个command_line，将其保存到default_command_line[]里 */
 #if defined(CONFIG_CMDLINE_EXTEND)
 	strlcat(default_command_line, " ", COMMAND_LINE_SIZE);
 	strlcat(default_command_line, tag->u.cmdline.cmdline,
@@ -135,7 +135,7 @@ static int __init parse_tag_cmdline(const struct tag *tag)
 	return 0;
 }
 
-__tagtable(ATAG_CMDLINE, parse_tag_cmdline);
+__tagtable(ATAG_CMDLINE, parse_tag_cmdline);     /* 函数parse_tag_cmdline()被放在一个独立的elf段里，在初始化的时候会被执行 */
 
 /*
  * Scan the tag table for this tag, and call its parse function.
@@ -176,8 +176,8 @@ static void __init squash_mem_tags(struct tag *tag)
 }
 
 const struct machine_desc * __init
-setup_machine_tags(phys_addr_t __atags_pointer, unsigned int machine_nr)
-{
+setup_machine_tags(phys_addr_t __atags_pointer, unsigned int machine_nr)  /* __atags_pointer：ATAG的（物理）起始地址；machine_nr：硬件平台的machine number */
+{	/* 功能：根据ATAG的（物理）起始地址和硬件平台的machine number，寻找匹配的machine，返回匹配的struct machine_desc的指针。若没有匹配到，则返回NULL */
 	struct tag *tags = (struct tag *)&default_tags;
 	const struct machine_desc *mdesc = NULL, *p;
 	char *from = default_command_line;
@@ -188,9 +188,9 @@ setup_machine_tags(phys_addr_t __atags_pointer, unsigned int machine_nr)
 	 * locate machine in the list of supported machines.
 	 */
 	for_each_machine_desc(p)
-		if (machine_nr == p->nr) {
+		if (machine_nr == p->nr) {	/* 遍历C代码注册的struct machine_desc[]，匹配machine number */
 			pr_info("Machine: %s\n", p->name);
-			mdesc = p;
+			mdesc = p;  /* 得到匹配的struct machine_desc的指针 */
 			break;
 		}
 

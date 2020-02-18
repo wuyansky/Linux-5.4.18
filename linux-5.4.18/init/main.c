@@ -274,7 +274,7 @@ static int __init set_init_arg(char *param, char *val,
 
 	repair_env_string(param, val, unused, NULL);
 
-	for (i = 0; argv_init[i]; i++) {
+	for (i = 0; argv_init[i]; i++) {  /* 遍历argv_init[]，找到第一个未使用的元素 */
 		if (i == MAX_INIT_ARGS) {
 			panic_later = "init";
 			panic_param = param;
@@ -458,7 +458,7 @@ static int __init do_early_param(char *param, char *val,
 	const struct obs_kernel_param *p;
 
 	for (p = __setup_start; p < __setup_end; p++) {  /* 遍历elf的某个段，此段是一个struct obs_kernel_param型的数组 */
-		if ((p->early && parameq(param, p->str)) ||  /* 该数组元素的early标志有效，且参数名等于param */
+		if ((p->early && parameq(param, p->str)) ||  /* 若该数组元素的early标志有效，且参数名等于param */
 		    (strcmp(param, "console") == 0 &&  /* 或elf里的参数名为"earlycon"，同时param等于"console"（即通过U-Boot参数指定了控制台） */
 		     strcmp(p->str, "earlycon") == 0)
 		) {
@@ -608,12 +608,12 @@ asmlinkage __visible void __init start_kernel(void)
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
 	jump_label_init();  /* 性能优化相关，无需关心 */
-	parse_early_param();  /* 解析并执行boot_command_line里的early param */
+	parse_early_param();  /* 解析并执行boot_command_line里的early param。这个函数在arch/arm/kernel/setup.c: setup_arch()里被调用过了，因此这里什么也不会做 */
 	after_dashes = parse_args("Booting kernel",  /* 此函数解析到"--"即停止 */
 				  static_command_line, __start___param,  /* 解析static_command_line，匹配__start___param[]里的参数名；若匹配失败，则执行unknown_bootoption() */
 				  __stop___param - __start___param,  /* __start___param和__stop___param都是elf里的段 */
 				  -1, -1, NULL, &unknown_bootoption);
-	if (!IS_ERR_OR_NULL(after_dashes))  /* "--"之后还有内容 */
+	if (!IS_ERR_OR_NULL(after_dashes))  /* "--"之后还有内容。这些内容作为参数传递给init进程 */
 		parse_args("Setting init args", after_dashes, NULL, 0, -1, -1,  /* 解析"--"之后的内容 */
 			   NULL, set_init_arg);  /* 执行set_init_arg() */
 

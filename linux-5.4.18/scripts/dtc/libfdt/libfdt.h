@@ -145,7 +145,7 @@ static inline void fdt32_st(void *property, uint32_t value)
 }
 
 static inline uint64_t fdt64_ld(const fdt64_t *p)
-{
+{	/* 将8字节的数据组合成一个64位数（大端模式） */
 	const uint8_t *bp = (const uint8_t *)p;
 
 	return ((uint64_t)bp[0] << 56)

@@ -1310,7 +1310,7 @@ static inline void prepare_page_table(void)
  * Reserve the special regions of memory
  */
 void __init arm_mm_memblock_reserve(void)
-{
+{	/* 预留最基本的内存，给页表使用 */
 	/*
 	 * Reserve the page tables.  These are already in use,
 	 * and can only be in node 0.

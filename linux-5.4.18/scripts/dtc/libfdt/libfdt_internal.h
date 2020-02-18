@@ -34,12 +34,12 @@ static inline void *fdt_offset_ptr_w_(void *fdt, int offset)
 }
 
 static inline const struct fdt_reserve_entry *fdt_mem_rsv_(const void *fdt, int n)
-{
-	const struct fdt_reserve_entry *rsv_table =
+{	/* 通过解析DTB的头部信息，计算出第n段保留内存的虚拟地址 */
+	const struct fdt_reserve_entry *rsv_table =  /* 得到DTB里"保留内存"这段信息的绝对起始地址（虚拟） */
 		(const struct fdt_reserve_entry *)
 		((const char *)fdt + fdt_off_mem_rsvmap(fdt));
 
-	return rsv_table + n;
+	return rsv_table + n;  /* 注意：这里是给struct fdt_reserve_entry *型的指针加n，因此得到的地址就是第n段保留内存的绝对地址（虚拟） */
 }
 static inline struct fdt_reserve_entry *fdt_mem_rsv_w_(void *fdt, int n)
 {

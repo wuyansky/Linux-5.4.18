@@ -23,8 +23,8 @@
 #include <linux/memblock.h>
 
 #define MAX_RESERVED_REGIONS	32
-static struct reserved_mem reserved_mem[MAX_RESERVED_REGIONS];
-static int reserved_mem_count;
+static struct reserved_mem reserved_mem[MAX_RESERVED_REGIONS];  /* 描述了所有的"reserved-memory"类型的保留内存。数组的每个元素对应设备树里的一个"reserved-memory"节点。该节点下可能有好几段保留内存，这里只登记第一段的信息 */
+static int reserved_mem_count;  /* 实际的保留内存个数，对应设备树里的"reserved-memory"节点个数 */
 
 static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
 	phys_addr_t align, phys_addr_t start, phys_addr_t end, bool nomap,
@@ -51,7 +51,7 @@ static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
 void __init fdt_reserved_mem_save_node(unsigned long node, const char *uname,
 				      phys_addr_t base, phys_addr_t size)
 {
-	struct reserved_mem *rmem = &reserved_mem[reserved_mem_count];
+	struct reserved_mem *rmem = &reserved_mem[reserved_mem_count];  /* 在上面Line26定义 */
 
 	if (reserved_mem_count == ARRAY_SIZE(reserved_mem)) {
 		pr_err("not enough space all defined regions.\n");
@@ -235,13 +235,13 @@ static void __init __rmem_check_for_overlap(void)
  * fdt_init_reserved_mem - allocate and init all saved reserved memory regions
  */
 void __init fdt_init_reserved_mem(void)
-{
+{	/* 初始化设备树里"reserved-memory"对应的保留内存（根据设备树里这些节点的属性） */
 	int i;
 
 	/* check for overlapping reserved regions */
 	__rmem_check_for_overlap();
 
-	for (i = 0; i < reserved_mem_count; i++) {
+	for (i = 0; i < reserved_mem_count; i++) {  /* 遍历所有的"reserved-memory" */
 		struct reserved_mem *rmem = &reserved_mem[i];
 		unsigned long node = rmem->fdt_node;
 		int len;
@@ -249,12 +249,12 @@ void __init fdt_init_reserved_mem(void)
 		int err = 0;
 		int nomap;
 
-		nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+		nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;  /* 判断是否有nomap属性 */
 		prop = of_get_flat_dt_prop(node, "phandle", &len);
 		if (!prop)
 			prop = of_get_flat_dt_prop(node, "linux,phandle", &len);
 		if (prop)
-			rmem->phandle = of_read_number(prop, len/4);
+			rmem->phandle = of_read_number(prop, len/4);  /* 拿到这段保留内存的句柄（别的设备可以通过这个句柄来引用这段保留内存） */
 
 		if (rmem->size == 0)
 			err = __reserved_mem_alloc_size(node, rmem->name,

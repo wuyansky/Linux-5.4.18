@@ -109,11 +109,11 @@ void __init setup_dma_zone(const struct machine_desc *mdesc)
 {
 #ifdef CONFIG_ZONE_DMA
 	if (mdesc->dma_zone_size) {
-		arm_dma_zone_size = mdesc->dma_zone_size;
-		arm_dma_limit = PHYS_OFFSET + arm_dma_zone_size - 1;
+		arm_dma_zone_size = mdesc->dma_zone_size;  /* 全局变量 arm_dma_zone_size 的定义：本文件Line83 */
+		arm_dma_limit = PHYS_OFFSET + arm_dma_zone_size - 1;  /* 全局变量 arm_dma_limit 的定义：本文件Line92 */
 	} else
 		arm_dma_limit = 0xffffffff;
-	arm_dma_pfn_limit = arm_dma_limit >> PAGE_SHIFT;
+	arm_dma_pfn_limit = arm_dma_limit >> PAGE_SHIFT;  /* 全局变量 arm_dma_pfn_limit 的定义：本文件Line93 */
 #endif
 }
 
@@ -262,26 +262,26 @@ void check_cpu_icache_size(int cpuid)
 #endif
 
 void __init arm_memblock_init(const struct machine_desc *mdesc)
-{
+{	/* 初始化内存，包括内核代码段、initrd、页表、DTB所需的内存、"/memreserve/"和"reserved-memory"所声明的保留内存，以及DMA的连续内存 */
 	/* Register the kernel text, kernel data and initrd with memblock. */
-	memblock_reserve(__pa(KERNEL_START), KERNEL_END - KERNEL_START);
+	memblock_reserve(__pa(KERNEL_START), KERNEL_END - KERNEL_START);  /* 为内核代码段预留内存 */
 
-	arm_initrd_init();
+	arm_initrd_init();  /* 为initrd预留内存 */
 
-	arm_mm_memblock_reserve();
+	arm_mm_memblock_reserve();  /* 为页表预留内存 */
 
 	/* reserve any platform specific memblock areas */
 	if (mdesc->reserve)
 		mdesc->reserve();
 
-	early_init_fdt_reserve_self();
-	early_init_fdt_scan_reserved_mem();
+	early_init_fdt_reserve_self();  /* 为DTB预留内存 */
+	early_init_fdt_scan_reserved_mem();  /* 从设备树里获取"/memreserve/"和"reserved-memory"所声明的保留内存，将其注册到系统里，并对其进行初始化 */
 
 	/* reserve memory for DMA contiguous allocations */
 	dma_contiguous_reserve(arm_dma_limit);
 
 	arm_memblock_steal_permitted = false;
-	memblock_dump_all();
+	memblock_dump_all();  /* 打印出已初始化的内存信息 */
 }
 
 void __init bootmem_init(void)

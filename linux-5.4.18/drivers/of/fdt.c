@@ -80,16 +80,16 @@ void __init of_fdt_limit_memory(int limit)
 }
 
 static bool of_fdt_device_is_available(const void *blob, unsigned long node)
-{
+{	/* 检查某个节点是否可用（即启用还是禁用状态） */
 	const char *status = fdt_getprop(blob, node, "status", NULL);
 
-	if (!status)
+	if (!status)  /* 若找不到名为"status"的属性，则认为该节点可用的 */
 		return true;
 
-	if (!strcmp(status, "ok") || !strcmp(status, "okay"))
+	if (!strcmp(status, "ok") || !strcmp(status, "okay"))  /* 若"status"的值是"ok"或"okay"，亦认为该节点是可用的 */
 		return true;
 
-	return false;
+	return false;  /* 其他情况：不可用 */
 }
 
 static void *unflatten_dt_alloc(void **mem, unsigned long size,
@@ -461,8 +461,8 @@ void *of_fdt_unflatten_tree(const unsigned long *blob,
 EXPORT_SYMBOL_GPL(of_fdt_unflatten_tree);
 
 /* Everything below here references initial_boot_params directly. */
-int __initdata dt_root_addr_cells;
-int __initdata dt_root_size_cells;
+int __initdata dt_root_addr_cells;  /* 由设备树解析而来的、顶层的"#addr-cells"的值 */
+int __initdata dt_root_size_cells;  /* 由设备树解析而来的、顶层的"#size-cells"的值 */
 
 void *initial_boot_params __ro_after_init;
 
@@ -475,15 +475,15 @@ static u32 of_fdt_crc32;
  */
 static int __init __reserved_mem_reserve_reg(unsigned long node,
 					     const char *uname)
-{
-	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
+{	/* 功能：解析设备树里的一个偏移为node、名为uname的"保留内存"节点，将这个节点下的内存（可能有多段）添加到系统的保留内存里。返回：0：成功；负数：失败 */
+	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);  /* reg节点的值是一个list，这里的t_len是list里的单个值所占的字节数 */
 	phys_addr_t base, size;
 	int len;
 	const __be32 *prop;
 	int first = 1;
 	bool nomap;
 
-	prop = of_get_flat_dt_prop(node, "reg", &len);
+	prop = of_get_flat_dt_prop(node, "reg", &len);  /* 解析"reg"节点，得到其值prop和长度len */
 	if (!prop)
 		return -ENOENT;
 
@@ -493,22 +493,22 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 		return -EINVAL;
 	}
 
-	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;  /* 解析"no-map"节点，得到其值nomap */
 
-	while (len >= t_len) {
-		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
-		size = dt_mem_next_cell(dt_root_size_cells, &prop);
+	while (len >= t_len) {  /* 遍历"reg"节点的值 */
+		base = dt_mem_next_cell(dt_root_addr_cells, &prop);  /* 迭代取出每一段内存的起始地址base */
+		size = dt_mem_next_cell(dt_root_size_cells, &prop);  /* 迭代取出每一段内存的长度size */
 
 		if (size &&
-		    early_init_dt_reserve_memory_arch(base, size, nomap) == 0)
-			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %ld MiB\n",
+		    early_init_dt_reserve_memory_arch(base, size, nomap) == 0)  /* 将这段内存添加到系统里，作为保留内存使用 */
+			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %ld MiB\n",  /* 成功 */
 				uname, &base, (unsigned long)size / SZ_1M);
-		else
+		else  /* 失败 */
 			pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %ld MiB\n",
 				uname, &base, (unsigned long)size / SZ_1M);
 
 		len -= t_len;
-		if (first) {
+		if (first) {  /* 一个节点下可以通过"reg"指定多段内存，这里仅登记第一段内存 */
 			fdt_reserved_mem_save_node(node, uname, base, size);
 			first = 0;
 		}
@@ -544,33 +544,33 @@ static int __init __reserved_mem_check_root(unsigned long node)
  */
 static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
 					  int depth, void *data)
-{
+{	/* 功能：这是被of_scan_flat_dt()所调用的回调函数。它寻找设备树里的"reserved-memory"节点，将对应的保留内存添加到系统里。返回：true或false */
 	static int found;
 	int err;
-
-	if (!found && depth == 1 && strcmp(uname, "reserved-memory") == 0) {
-		if (__reserved_mem_check_root(node) != 0) {
+	/* 注意：由于of_scan_flat_dt()里对设备树的遍历方式为前序深度遍历，这意味着传进来的参数depth不是递增的，而是类似于"1,2,3,3,1,2,1,2,3,4"这样的 */
+	if (!found && depth == 1 && strcmp(uname, "reserved-memory") == 0) {  /* (stage 2) 在顶层找到了"reserved-memory"节点 */
+		if (__reserved_mem_check_root(node) != 0) {  /* 异常处理 */
 			pr_err("Reserved memory: unsupported node format, ignoring\n");
 			/* break scan */
 			return 1;
 		}
-		found = 1;
+		found = 1;  /* 我们仅仅做个标记，就返回。下一次调用本函数，就会跳到最后一个分支里（else if (found && depth >= 2)），对"reserved-memory"的子节点进行遍历 */
 		/* scan next node */
 		return 0;
-	} else if (!found) {
+	} else if (!found) {  /* (stage 1) 没找到。刚开始遍历时，会从这个分支开始 */
 		/* scan next node */
-		return 0;
-	} else if (found && depth < 2) {
+		return 0;  /* 继续找，直到进前面的分支 */
+	} else if (found && depth < 2) {  /* (stage 4) 已经遍历完"reserved-memory"节点，回到其兄弟节点了 */
 		/* scanning of /reserved-memory has been finished */
-		return 1;
-	}
+		return 1;  /* 结束遍历 */
+	} /* else if (found && depth >= 2) { ... */  /* (stage 3) 当前节点是"reserved-memory"的子节点 */
 
-	if (!of_fdt_device_is_available(initial_boot_params, node))
+	if (!of_fdt_device_is_available(initial_boot_params, node))  /* 检查节点是否被禁用了 */
 		return 0;
 
-	err = __reserved_mem_reserve_reg(node, uname);
-	if (err == -ENOENT && of_get_flat_dt_prop(node, "size", NULL))
-		fdt_reserved_mem_save_node(node, uname, 0, 0);
+	err = __reserved_mem_reserve_reg(node, uname);  /* 将当前节点下的所有保留内存都添加到系统里 */
+	if (err == -ENOENT && of_get_flat_dt_prop(node, "size", NULL))  /* 如果该节点没有reg属性，但有size属性 */
+		fdt_reserved_mem_save_node(node, uname, 0, 0);  /* 则登记一个起始地址为0、长度为0的保留内存到系统里（不知道为啥） */
 
 	/* scan next node */
 	return 0;
@@ -584,23 +584,23 @@ static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
  * once the early allocator (i.e. memblock) has been fully activated.
  */
 void __init early_init_fdt_scan_reserved_mem(void)
-{
+{	/* 从设备树里获取"/memreserve/"和"reserved-memory"所声明的保留内存，将其注册到系统里，并对其进行初始化 */
 	int n;
 	u64 base, size;
 
-	if (!initial_boot_params)
+	if (!initial_boot_params)	/* 检查DTB是否已就绪 */
 		return;
 
 	/* Process header /memreserve/ fields */
-	for (n = 0; ; n++) {
-		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
+	for (n = 0; ; n++) {  /* 遍历DTB里的"/memreserve/"节点（注：此类节点不能配置nomap属性，因此默认都是要被map的） */
+		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);  /* 从DTB里解析出第n段保留内存的起始地址base和长度size */
 		if (!size)
 			break;
-		early_init_dt_reserve_memory_arch(base, size, false);
+		early_init_dt_reserve_memory_arch(base, size, false);  /* 将这段保留内存添加到系统里，并为其建立页表映射 */
 	}
 
-	of_scan_flat_dt(__fdt_scan_reserved_mem, NULL);
-	fdt_init_reserved_mem();
+	of_scan_flat_dt(__fdt_scan_reserved_mem, NULL);  /* 遍历设备树的每个节点，对每个节点调用__fdt_scan_reserved_mem()。即寻找设备树里的"reserved-memory"节点，将对应的保留内存添加到系统里。 */
+	fdt_init_reserved_mem();  /* 初始化"reserved-memory"对应的内存 */
 }
 
 /**
@@ -626,18 +626,18 @@ void __init early_init_fdt_reserve_self(void)
  * used to extract the memory information at boot before we can
  * unflatten the tree
  */
-int __init of_scan_flat_dt(int (*it)(unsigned long node,  /* 回调函数。在搜索设备树时，对每一个节点调用一次 */
+int __init of_scan_flat_dt(int (*it)(unsigned long node,  /* it: 回调函数。在搜索设备树时，对每一个节点调用一次 */
 				     const char *uname, int depth,
 				     void *data),
-			   void *data)  /* 要传递给回调函数的最后一个参数 */
-{   /* 功能：搜索设备树，针对每个节点，调用回调函数it，并将参数data传递给该回调函数，直到回调函数返回成功为止。返回：true或false */
+			   void *data)  /* data: 传递给回调函数的最后一个参数 */
+{   /* 功能：遍历设备树，针对每个节点，调用回调函数it，并将参数data传递给该回调函数，直到回调函数返回成功为止。返回：true或false */
 	const void *blob = initial_boot_params;  /* blob是二进制的设备树在内存中的首地址（虚拟），可供解析 */
 	const char *pathp;
 	int offset, rc = 0, depth = -1;
 
 	if (!blob)
 		return 0;
-
+	/* 若将设备树看成二叉树，则这里的遍历方式为前序深度遍历，即按照“根-左-右”的顺序递归遍历。也就是说，先深度遍历当前节点的所有子节点，然后再跳到当前节点的兄弟节点，进行遍历 */
 	for (offset = fdt_next_node(blob, -1, &depth);  /* 从根节点开始遍历每个节点，得到每个节点的偏移和深度 */
 	     offset >= 0 && depth >= 0 && !rc;  /* 注意这里的停止条件：rc!=0，也就是说一旦回调函数执行成功，循环就停止了 */
 	     offset = fdt_next_node(blob, offset, &depth)) {
@@ -709,8 +709,8 @@ unsigned long __init of_get_flat_dt_root(void)
  */
 const void *__init of_get_flat_dt_prop(unsigned long node, const char *name,  /* node是节点相对二进制设备树的起始位置的偏移量（从这里开始查找），name是要查找的属性名 */
 				       int *size)  /* size是（传出的）找到的属性的值的长度 */
-{
-	return fdt_getprop(initial_boot_params, node, name, size);  /* 返回属性的值的指针 */
+{	/* 从设备树里偏移为node处开始查找名为name的节点，返回节点的值的指针，得到值的长度size */
+	return fdt_getprop(initial_boot_params, node, name, size);
 }
 
 /**
@@ -1104,7 +1104,7 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,  /* 
 #endif
 
 void __init __weak early_init_dt_add_memory_arch(u64 base, u64 size)  /* 注意：这里的base是物理地址！ */
-{
+{	/* 将一段内存（起始地址为base，长度为size）添加到系统里，作为普通内存使用 */
 	const u64 phys_offset = MIN_MEMBLOCK_ADDR;
 
 	if (size < PAGE_SIZE - (base & ~PAGE_MASK)) {
@@ -1151,8 +1151,8 @@ int __init __weak early_init_dt_mark_hotplug_memory_arch(u64 base, u64 size)
 }
 
 int __init __weak early_init_dt_reserve_memory_arch(phys_addr_t base,
-					phys_addr_t size, bool nomap)
-{
+					phys_addr_t size, bool nomap)  /* nomap表示无需为这段内存建立页表映射 */
+{	/* 功能：将一段内存（起始地址为base，长度为size）添加到系统里，作为保留内存使用。可通过nomap参数选择是否为其建立页表映射。返回：0：成功；负数：失败 */
 	if (nomap)
 		return memblock_remove(base, size);
 	return memblock_reserve(base, size);

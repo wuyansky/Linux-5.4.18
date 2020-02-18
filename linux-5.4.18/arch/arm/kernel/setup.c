@@ -1057,7 +1057,7 @@ static inline void reserve_crashkernel(void) {}
 #endif /* CONFIG_KEXEC */
 
 void __init hyp_mode_check(void)
-{
+{	/* 虚拟化扩展相关，暂不关心 */
 #ifdef CONFIG_ARM_VIRT_EXT
 	sync_boot_mode();
 
@@ -1080,8 +1080,8 @@ void __init setup_arch(char **cmdline_p)
 	setup_processor();
 	mdesc = setup_machine_fdt(__atags_pointer);  /* __atags_pointer是设备树在内存里的物理地址。见arch/arm/kernel/head-common.S: .long __machine_arch_type @ r1 */
 	if (!mdesc)
-		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);
-	if (!mdesc) {
+		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);  /* 这是旧的内核传参机制，称为ATAGS。已被设备树替代，无需过多关注。 */
+	if (!mdesc) {  /* 设备树和ATAGS都无效，报错 */
 		early_print("\nError: invalid dtb and unrecognized/unsupported machine ID\n");
 		early_print("  r1=0x%08x, r2=0x%08x\n", __machine_arch_type,
 			    __atags_pointer);
@@ -1091,12 +1091,12 @@ void __init setup_arch(char **cmdline_p)
 		dump_machine_table();
 	}
 
-	machine_desc = mdesc;
-	machine_name = mdesc->name;
-	dump_stack_set_arch_desc("%s", mdesc->name);
+	machine_desc = mdesc;  /* 备份到全局变量里（见本文件Line158） */
+	machine_name = mdesc->name;  /* 如"ARM" */
+	dump_stack_set_arch_desc("%s", mdesc->name);  /* 将machine_name保存到全局变量里，以便dump stack的时候能看到 */
 
 	if (mdesc->reboot_mode != REBOOT_HARD)
-		reboot_mode = mdesc->reboot_mode;
+		reboot_mode = mdesc->reboot_mode;  /* 备份到全局变量里（见本文件Line81） */
 
 	init_mm.start_code = (unsigned long) _text;
 	init_mm.end_code   = (unsigned long) _etext;
@@ -1104,33 +1104,33 @@ void __init setup_arch(char **cmdline_p)
 	init_mm.brk	   = (unsigned long) _end;
 
 	/* populate cmd_line too for later use, preserving boot_command_line */
-	strlcpy(cmd_line, boot_command_line, COMMAND_LINE_SIZE);
-	*cmdline_p = cmd_line;
+	strlcpy(cmd_line, boot_command_line, COMMAND_LINE_SIZE);  /* 将内核命令行备份到全局变量cmd_line[]里 */
+	*cmdline_p = cmd_line;  /* 给传出参数赋值 */
 
-	early_fixmap_init();
-	early_ioremap_init();
+	early_fixmap_init();	/* 看不懂 */
+	early_ioremap_init();	/* 看不懂 */
 
-	parse_early_param();
+	parse_early_param();	/* 解析并执行boot_command_line里的early param */
 
 #ifdef CONFIG_MMU
-	early_mm_init(mdesc);
+	early_mm_init(mdesc);	/* 看不懂 */
 #endif
-	setup_dma_zone(mdesc);
-	xen_early_init();
-	efi_init();
+	setup_dma_zone(mdesc);	/* 给全局变量 arm_dma_zone_size, arm_dma_limit,      arm_dma_pfn_limit赋值   */
+	xen_early_init();	/* Xen 是一个虚拟机监视器。暂时无需关心 */
+	efi_init();  /* EFI (Extensible Firmware Interface) Support。暂时无需关心 */
 	/*
 	 * Make sure the calculation for lowmem/highmem is set appropriately
 	 * before reserving/allocating any mmeory
 	 */
-	adjust_lowmem_bounds();
-	arm_memblock_init(mdesc);
+	adjust_lowmem_bounds();  /* arch/arm/mm/mmu.c */
+	arm_memblock_init(mdesc);  /* 初始化内存 */
 	/* Memory may have been removed so recalculate the bounds. */
 	adjust_lowmem_bounds();
 
-	early_ioremap_reset();
+	early_ioremap_reset();  /* 似乎没干啥 */
 
-	paging_init(mdesc);
-	request_standard_resources(mdesc);
+	paging_init(mdesc);  /* 建立页表，初始化memory zone */
+	request_standard_resources(mdesc);  /* ？？？ */
 
 	if (mdesc->restart)
 		arm_pm_restart = mdesc->restart;
@@ -1138,11 +1138,11 @@ void __init setup_arch(char **cmdline_p)
 	unflatten_device_tree();
 
 	arm_dt_init_cpu_maps();
-	psci_dt_init();
-#ifdef CONFIG_SMP
+	psci_dt_init();  /* PSCI, Power State Coordination Interface，由ARM定义的电源管理接口规范。暂不深究 */
+#ifdef CONFIG_SMP  /* 多核的初始化，暂不深究 */
 	if (is_smp()) {
 		if (!mdesc->smp_init || !mdesc->smp_init()) {
-			if (psci_smp_available())
+			if (psci_smp_available())  /* PSCI, Power State Coordination Interface，由ARM定义的电源管理接口规范。暂不深究 */
 				smp_set_ops(&psci_smp_ops);
 			else if (mdesc->smp)
 				smp_set_ops(mdesc->smp);
@@ -1153,21 +1153,21 @@ void __init setup_arch(char **cmdline_p)
 #endif
 
 	if (!is_smp())
-		hyp_mode_check();
+		hyp_mode_check();	/* 虚拟化扩展相关，暂不关心 */
 
-	reserve_crashkernel();
+	reserve_crashkernel();	/* 为crash kernel预留内存。不重要 */
 
-#ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER
+#ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER  /* 暂不关心 */
 	handle_arch_irq = mdesc->handle_irq;
 #endif
 
-#ifdef CONFIG_VT
+#ifdef CONFIG_VT  /* Virtual terminal. Defined in drivers/tty/Kconfig:13. 嵌入式设备里一般不会启用此项。无需关注 */
 #if defined(CONFIG_VGA_CONSOLE)
 	conswitchp = &vga_con;
 #elif defined(CONFIG_DUMMY_CONSOLE)
 	conswitchp = &dummy_con;
 #endif
-#endif
+#endif  /* CONFIG_VT */
 
 	if (mdesc->init_early)
 		mdesc->init_early();

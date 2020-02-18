@@ -145,29 +145,29 @@ int fdt_generate_phandle(const void *fdt, uint32_t *phandle)
 	return 0;
 }
 
-static const struct fdt_reserve_entry *fdt_mem_rsv(const void *fdt, int n)
-{
+static const struct fdt_reserve_entry *fdt_mem_rsv(const void *fdt, int n)  /* fdt：DTB在内存中的起始地址（虚拟）；n：第n段保留内存 */
+{	/* 功能：通过解析DTB的头部信息，计算出第n段保留内存的虚拟地址，并返回该地址。出错则返回NULL */
 	int offset = n * sizeof(struct fdt_reserve_entry);
-	int absoffset = fdt_off_mem_rsvmap(fdt) + offset;
+	int absoffset = fdt_off_mem_rsvmap(fdt) + offset;  /* 获取设备树里第n个reserved mem信息的偏移量 */
 
-	if (absoffset < fdt_off_mem_rsvmap(fdt))
+	if (absoffset < fdt_off_mem_rsvmap(fdt))  /* 检查上述偏移量是否合法 */
 		return NULL;
-	if (absoffset > fdt_totalsize(fdt) - sizeof(struct fdt_reserve_entry))
+	if (absoffset > fdt_totalsize(fdt) - sizeof(struct fdt_reserve_entry))  /* 检查上述偏移量是否合法 */
 		return NULL;
-	return fdt_mem_rsv_(fdt, n);
+	return fdt_mem_rsv_(fdt, n);  /* 计算出第n段保留内存的虚拟地址 */
 }
 
 int fdt_get_mem_rsv(const void *fdt, int n, uint64_t *address, uint64_t *size)
-{
+{	/* 功能：从DTB里解析出第n段保留内存的起始地址和长度信息，通过参数address和size传出。返回：0：成功；负数：失败 */
 	const struct fdt_reserve_entry *re;
 
-	FDT_RO_PROBE(fdt);
-	re = fdt_mem_rsv(fdt, n);
+	FDT_RO_PROBE(fdt);  /* 检查设备树是否有效 */
+	re = fdt_mem_rsv(fdt, n);  /* 得出第n段保留内存的信息（起始地址，长度）的首地址re */
 	if (!re)
 		return -FDT_ERR_BADOFFSET;
 
-	*address = fdt64_ld(&re->address);
-	*size = fdt64_ld(&re->size);
+	*address = fdt64_ld(&re->address);  /* 解析出保留内存的起始地址，通过参数传出 */
+	*size = fdt64_ld(&re->size);  /* 解析出保留内存的长度，通过参数传出 */
 	return 0;
 }
 

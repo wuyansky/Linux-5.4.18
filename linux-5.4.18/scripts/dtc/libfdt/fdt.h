@@ -9,7 +9,7 @@
 
 #ifndef __ASSEMBLY__
 
-struct fdt_header {
+struct fdt_header {  /* 设备树Blob（即DTB文件）    的开头，具有如下的数据格式： */
 	fdt32_t magic;			 /* magic word FDT_MAGIC */
 	fdt32_t totalsize;		 /* total size of DT block */
 	fdt32_t off_dt_struct;		 /* offset to structure */
@@ -28,7 +28,7 @@ struct fdt_header {
 	fdt32_t size_dt_struct;		 /* size of the structure block */
 };
 
-struct fdt_reserve_entry {
+struct fdt_reserve_entry {  /* 该结构体用于描述一段保留内存 */
 	fdt64_t address;
 	fdt64_t size;
 };

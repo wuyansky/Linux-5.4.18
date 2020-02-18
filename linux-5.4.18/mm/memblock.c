@@ -111,7 +111,7 @@ static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_RESER
 static struct memblock_region memblock_physmem_init_regions[INIT_PHYSMEM_REGIONS] __initdata_memblock;
 #endif
 
-struct memblock memblock __initdata_memblock = {
+struct memblock memblock __initdata_memblock = {  /* 全局的、全部的内存描述结构体 */
 	.memory.regions		= memblock_memory_init_regions,
 	.memory.cnt		= 1,	/* empty dummy entry */
 	.memory.max		= INIT_MEMBLOCK_REGIONS,
@@ -695,7 +695,7 @@ int __init_memblock memblock_add_node(phys_addr_t base, phys_addr_t size,
  * 0 on success, -errno on failure.
  */
 int __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
-{
+{	/* 将一段普通内存添加到系统里。详见上面的注释 */
 	phys_addr_t end = base + size - 1;
 
 	memblock_dbg("memblock_add: [%pa-%pa] %pS\n",
@@ -825,7 +825,7 @@ int __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 }
 
 int __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
-{
+{	/* 功能：将起始地址为base，长度为size的一段内存添加到系统预留内存里。返回：0：成功；负数：失败 */
 	phys_addr_t end = base + size - 1;
 
 	memblock_dbg("memblock_reserve: [%pa-%pa] %pS\n",
