@@ -128,7 +128,7 @@ EXPORT_SYMBOL(system_state);
 
 extern void time_init(void);
 /* Default late time init is NULL. archs can override this later. */
-void (*__initdata late_time_init)(void);
+void (*__initdata late_time_init)(void);  /* 在 arch/arm/kernel/smp_twd.c:twd_local_timer_common_register() 里被赋值 */
 
 /* Untouched command line saved by arch-specific code. */
 char __initdata boot_command_line[COMMAND_LINE_SIZE];
@@ -622,66 +622,66 @@ asmlinkage __visible void __init start_kernel(void)
 	 * kmem_cache_init()
 	 */
 	setup_log_buf(0);
-	vfs_caches_init_early();
-	sort_main_extable();
-	trap_init();
-	mm_init();
+	vfs_caches_init_early();  /* 初始化VFS所需的缓存（for dcache、inode等） */
+	sort_main_extable();  /* 对内核内置的exception table进行排序。不懂 */
+	trap_init();  /* 空函数 */
+	mm_init();  /* init/main.c: Line549。内存初始化。太复杂了，看不懂 */
 
-	ftrace_init();
+	ftrace_init();  /* ftrace是用于内核故障调试和性能分析的工具。暂不关心 */
 
 	/* trace_printk can be enabled here */
-	early_trace_init();
+	early_trace_init();  /* 调试相关？不管它 */
 
 	/*
 	 * Set up the scheduler prior starting any interrupts (such as the
 	 * timer interrupt). Full topology setup happens at smp_init()
 	 * time - but meanwhile we still have a functioning scheduler.
 	 */
-	sched_init();
+	sched_init();  /* 调度器初始化。巨复杂。不管它 */
 	/*
 	 * Disable preemption - early bootup scheduling is extremely
 	 * fragile until we cpu_idle() for the first time.
 	 */
-	preempt_disable();
-	if (WARN(!irqs_disabled(),
+	preempt_disable();  /* 关抢占 */
+	if (WARN(!irqs_disabled(),  /* 如果中断被误开启了 */
 		 "Interrupts were enabled *very* early, fixing it\n"))
-		local_irq_disable();
-	radix_tree_init();
+		local_irq_disable();  /* 则强制关闭它 */
+	radix_tree_init();  /* 不管它 */
 
 	/*
 	 * Set up housekeeping before setting up workqueues to allow the unbound
 	 * workqueue to take non-housekeeping into account.
 	 */
-	housekeeping_init();
+	housekeeping_init();  /* 不知道干啥的 */
 
 	/*
 	 * Allow workqueue creation and work item queueing/cancelling
 	 * early.  Work item execution depends on kthreads and starts after
 	 * workqueue_init().
 	 */
-	workqueue_init_early();
+	workqueue_init_early();  /* 工作队列的早期初始化。不关心 */
 
-	rcu_init();
+	rcu_init();  /* RCU初始化。不关心 */
 
 	/* Trace events are available after this */
-	trace_init();
+	trace_init();  /* 跟踪事件初始化。不关心 */
 
 	if (initcall_debug)
-		initcall_debug_enable();
+		initcall_debug_enable();  /* 调试相关。不关心 */
 
-	context_tracking_init();
+	context_tracking_init();  /* 看不懂。不关心 */
 	/* init some links before init_ISA_irqs() */
-	early_irq_init();
-	init_IRQ();
-	tick_init();
-	rcu_init_nohz();
-	init_timers();
-	hrtimers_init();
-	softirq_init();
-	timekeeping_init();
+	early_irq_init();  /* 看不懂 */
+	init_IRQ();  /* 初始化中断控制器 */
+	tick_init();  		/* 没看懂 */
+	rcu_init_nohz();	/* 没看懂 */
+	init_timers();		/* 没看懂 */
+	hrtimers_init();	/* 没细看 */
+	softirq_init();		/* 没细看 */
+	timekeeping_init();	/* 初始化系统时钟计时。没细看 */
 
-	/*
-	 * For best initial stack canary entropy, prepare it after:
+	/* 这一段都是与随机数和熵相关的代码。与体系架构关心不大，无需关心。
+	 * For best initial stack canary（金丝雀，这里是“预警”的意思） entropy（熵）, prepare it after:
 	 * - setup_arch() for any UEFI RNG entropy and boot cmdline access
 	 * - timekeeping_init() for ktime entropy used in rand_initialize()
 	 * - rand_initialize() to get any arch-specific entropy like RDRAND
@@ -693,36 +693,36 @@ asmlinkage __visible void __init start_kernel(void)
 	add_device_randomness(command_line, strlen(command_line));
 	boot_init_stack_canary();
 
-	time_init();
-	printk_safe_init();
-	perf_event_init();
-	profile_init();
-	call_function_init();
+	time_init();  /* 初始化Clock和Timer */
+	printk_safe_init();	/* 针对多核下的printk的初始化，无需关心 */
+	perf_event_init();	/* 没看懂 */
+	profile_init();		/* profile是内核诊断工具。不关心 */
+	call_function_init();	/* 没看懂 */
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");
 
-	early_boot_irqs_disabled = false;  /* This flag was set earlier in current function */
+	early_boot_irqs_disabled = false;  /* This flag was set earlier in current function (Line588) */
 	local_irq_enable();
 
-	kmem_cache_init_late();
+	kmem_cache_init_late();  /* cache相关，没看懂 */
 
 	/*
 	 * HACK ALERT! This is early. We're enabling the console before
 	 * we've done PCI setups etc, and console_init() must be aware of
 	 * this. But we do want output early, in case something goes wrong.
 	 */
-	console_init();
+	console_init();  /* console初始化。自此以后就可以使用printk()了。非重点，不关心。PS：其实在此前是有printk的，但其打印的内容必须在console_init之后才能打印出来，也就是说之前prinkt的数据都保存在了一个缓冲区内，等到console_init以后才打印出来 */
 	if (panic_later)
 		panic("Too many boot %s vars at `%s'", panic_later,
 		      panic_param);
 
-	lockdep_init();
+	lockdep_init();	/* Lockdep是内核检测deadlock的手段。对应的配置项为CONFIG_LOCKDEP，默认没有开启。非重点，不关心 */
 
 	/*
 	 * Need to run this when irqs are enabled, because it wants
 	 * to self-test [hard/soft]-irqs on/off lock inversion bugs
 	 * too:
 	 */
-	locking_selftest();
+	locking_selftest();  /* 锁的自测。无需关心 */
 
 	/*
 	 * This needs to be called before any devices perform DMA
@@ -730,9 +730,9 @@ asmlinkage __visible void __init start_kernel(void)
 	 * mark the bounce buffers as decrypted so that their usage will
 	 * not cause "plain-text" data to be decrypted when accessed.
 	 */
-	mem_encrypt_init();
+	mem_encrypt_init();  /* 空函数 */
 
-#ifdef CONFIG_BLK_DEV_INITRD
+#ifdef CONFIG_BLK_DEV_INITRD  /* initrd相关。暂不关心 */
 	if (initrd_start && !initrd_below_start_ok &&
 	    page_to_pfn(virt_to_page((void *)initrd_start)) < min_low_pfn) {
 		pr_crit("initrd overwritten (0x%08lx < 0x%08lx) - disabling it.\n",
@@ -741,16 +741,16 @@ asmlinkage __visible void __init start_kernel(void)
 		initrd_start = 0;
 	}
 #endif
-	setup_per_cpu_pageset();
-	numa_policy_init();
-	acpi_early_init();
+	setup_per_cpu_pageset();  /* 没看懂 */
+	numa_policy_init();  /* NUMA (Non-Uniform Memory Access Architecture)。NUMA技术有效结合了SMP系统易编程性和MPP（大规模并行）系统易扩展性的特点，较好解决了SMP系统的可扩展性问题，已成为当今高性能服务器的主流体系结构之一。与我们无关 */
+	acpi_early_init();  /* ACPI (Advanced Configuration and Power Management Interface)，高级配置和电源管理接口。x86平台上的东西，与ARM无关 */
 	if (late_time_init)
-		late_time_init();
-	sched_clock_init();
-	calibrate_delay();
-	pid_idr_init();
-	anon_vma_init();
-#ifdef CONFIG_X86
+		late_time_init();  /* 其实就是执行了 arch/arm/kernel/smp_twd.c: twd_timer_setup()。Timer初始化相关，暂不深究 */
+	sched_clock_init();	/* 初始化调度时钟。没细看 */
+	calibrate_delay();	/* 对忙等的精度进行校准，得到全局变量 loops_per_jiffy */
+	pid_idr_init();  /* idr即"ID Radix"，内核中通过radix树对ID进行组织和管理，是一种将整数ID和指针关联在一起的一种机制。不关心 */
+	anon_vma_init(); /* 匿名虚拟内存域初始化。暂不深究 */
+#ifdef CONFIG_X86  /* 不关心 */
 	if (efi_enabled(EFI_RUNTIME_SERVICES))
 		efi_enter_virtual_mode();
 #endif

@@ -477,7 +477,7 @@ struct of_intc_desc {
  * and calls their initialization functions in order with parents first.
  */
 void __init of_irq_init(const struct of_device_id *matches)
-{
+{	/* 在设备树里寻找中断控制器（可能有多个），调用其初始化函数，分别对其进行初始化 */
 	const struct of_device_id *match;
 	struct device_node *np, *parent = NULL;
 	struct of_intc_desc *desc, *temp_desc;
@@ -486,7 +486,7 @@ void __init of_irq_init(const struct of_device_id *matches)
 	INIT_LIST_HEAD(&intc_desc_list);
 	INIT_LIST_HEAD(&intc_parent_list);
 
-	for_each_matching_node_and_match(np, matches, &match) {
+	for_each_matching_node_and_match(np, matches, &match) {  /* 遍历设备树的每个节点，与matches进行匹配，得到匹配的节点为match */
 		if (!of_property_read_bool(np, "interrupt-controller") ||
 				!of_device_is_available(np))
 			continue;
@@ -504,7 +504,7 @@ void __init of_irq_init(const struct of_device_id *matches)
 			of_node_put(np);
 			goto err;
 		}
-
+		/* 用struct of_intc_desc *desc来描述一个中断控制器 */
 		desc->irq_init_cb = match->data;
 		desc->dev = of_node_get(np);
 		desc->interrupt_parent = of_irq_find_parent(np);
@@ -537,7 +537,7 @@ void __init of_irq_init(const struct of_device_id *matches)
 			pr_debug("of_irq_init: init %pOF (%p), parent %p\n",
 				 desc->dev,
 				 desc->dev, desc->interrupt_parent);
-			ret = desc->irq_init_cb(desc->dev,
+			ret = desc->irq_init_cb(desc->dev,  /* 调用C代码里注册的回调函数，对中断控制器进行初始化 */
 						desc->interrupt_parent);
 			if (ret) {
 				of_node_clear_flag(desc->dev, OF_POPULATED);

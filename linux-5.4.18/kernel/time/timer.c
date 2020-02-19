@@ -2027,7 +2027,7 @@ static void __init init_timer_cpus(void)
 	int cpu;
 
 	for_each_possible_cpu(cpu)
-		init_timer_cpu(cpu);
+		init_timer_cpu(cpu);  /* 在上面定义 */
 }
 
 void __init init_timers(void)

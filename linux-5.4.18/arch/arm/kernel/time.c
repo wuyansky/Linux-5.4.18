@@ -99,12 +99,12 @@ int __init register_persistent_clock(clock_access_fn read_persistent)
 }
 
 void __init time_init(void)
-{
+{	/* 初始化Clock和Timer */
 	if (machine_desc->init_time) {
 		machine_desc->init_time();
 	} else {
 #ifdef CONFIG_COMMON_CLK
-		of_clk_init(NULL);
+		of_clk_init(NULL);  /* 初始化Clock */
 #endif
 		timer_probe();
 	}

@@ -81,11 +81,11 @@ void __init init_IRQ(void)
 	int ret;
 
 	if (IS_ENABLED(CONFIG_OF) && !machine_desc->init_irq)
-		irqchip_init();
-	else
+		irqchip_init();  /* 初始化中断控制器 */
+	else  /* CONFIG_OF未启用，或者machine_desc->init_irq非空 */
 		machine_desc->init_irq();
 
-	if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_CACHE_L2X0) &&
+	if (IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_CACHE_L2X0) &&  /* cache相关 */
 	    (machine_desc->l2c_aux_mask || machine_desc->l2c_aux_val)) {
 		if (!outer_cache.write_sec)
 			outer_cache.write_sec = machine_desc->l2c_write_sec;
@@ -95,7 +95,7 @@ void __init init_IRQ(void)
 			pr_err("L2C: failed to init: %d\n", ret);
 	}
 
-	uniphier_cache_init();
+	uniphier_cache_init();  /* cache相关 */
 }
 
 #ifdef CONFIG_SPARSE_IRQ

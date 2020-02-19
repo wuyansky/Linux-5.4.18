@@ -1162,7 +1162,7 @@ EXPORT_SYMBOL(of_match_node);
 struct device_node *of_find_matching_node_and_match(struct device_node *from,
 					const struct of_device_id *matches,
 					const struct of_device_id **match)
-{
+{	/* 功能：从设备树节点from的下一个节点开始搜索，与matches[]里的元素逐个进行匹配，将匹配到的元素通过match传出。返回：匹配到的设备树节点的指针，或NULL */
 	struct device_node *np;
 	const struct of_device_id *m;
 	unsigned long flags;

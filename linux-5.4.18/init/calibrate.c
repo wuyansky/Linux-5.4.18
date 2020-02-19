@@ -273,7 +273,7 @@ void __attribute__((weak)) calibration_delay_done(void)
 }
 
 void calibrate_delay(void)
-{
+{	/* 对忙等的精度进行校准，得到全局变量 loops_per_jiffy */
 	unsigned long lpj;
 	static bool printed;
 	int this_cpu = smp_processor_id();

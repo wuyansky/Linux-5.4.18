@@ -1530,7 +1530,7 @@ static bool persistent_clock_exists;
  * timekeeping_init - Initializes the clocksource and common timekeeping values
  */
 void __init timekeeping_init(void)
-{
+{	/* 初始化系统时钟计时 */
 	struct timespec64 wall_time, boot_offset, wall_to_mono;
 	struct timekeeper *tk = &tk_core.timekeeper;
 	struct clocksource *clock;

@@ -301,7 +301,7 @@ static int __init twd_local_timer_common_register(struct device_node *np)
 	if (twd_timer_rate)
 		twd_timer_setup();
 	else
-		late_time_init = twd_timer_setup;
+		late_time_init = twd_timer_setup;  /* 为全局变量 late_time_init 赋值 */
 
 	return 0;
 
@@ -335,6 +335,6 @@ out:
 	WARN(err, "twd_local_timer_of_register failed (%d)\n", err);
 	return err;
 }
-TIMER_OF_DECLARE(arm_twd_a9, "arm,cortex-a9-twd-timer", twd_local_timer_of_register);
+TIMER_OF_DECLARE(arm_twd_a9, "arm,cortex-a9-twd-timer", twd_local_timer_of_register);  /* TIMER_OF_DECLARE() is defined in `include/linux/clocksource.h:262` */
 TIMER_OF_DECLARE(arm_twd_a5, "arm,cortex-a5-twd-timer", twd_local_timer_of_register);
 TIMER_OF_DECLARE(arm_twd_11mp, "arm,arm11mp-twd-timer", twd_local_timer_of_register);

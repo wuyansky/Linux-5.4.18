@@ -1152,7 +1152,7 @@ void __init setup_log_buf(int early)
 	char *new_log_buf;
 	unsigned int free;
 
-	if (log_buf != __log_buf)
+	if (log_buf != __log_buf)  /* __log_buf: 见Line459 */
 		return;
 
 	if (!early && !new_log_buf_len)
@@ -2863,13 +2863,13 @@ EXPORT_SYMBOL(unregister_console);
  * Just do some early initializations, and do the complex setup
  * later.
  */
-void __init console_init(void)
+void __init console_init(void)  /* 这个函数只在start_kernel()里被调用了，且只有这一处调用 */
 {
 	int ret;
 	initcall_t call;
 	initcall_entry_t *ce;
 
-	/* Setup the default TTY line discipline. */
+	/* Setup the default TTY line discipline（规程）. */
 	n_tty_init();
 
 	/*

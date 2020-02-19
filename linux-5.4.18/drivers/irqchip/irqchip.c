@@ -22,10 +22,10 @@
 static const struct of_device_id
 irqchip_of_match_end __used __section(__irqchip_of_table_end);
 
-extern struct of_device_id __irqchip_of_table[];
+extern struct of_device_id __irqchip_of_table[];  /* elf里的一个段 */
 
 void __init irqchip_init(void)
 {
 	of_irq_init(__irqchip_of_table);
-	acpi_probe_device_table(irqchip);
+	acpi_probe_device_table(irqchip);  /* 不关心 */
 }
