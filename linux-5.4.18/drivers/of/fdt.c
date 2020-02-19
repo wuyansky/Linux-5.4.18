@@ -1224,11 +1224,11 @@ bool __init early_init_dt_scan(void *params)
  */
 void __init unflatten_device_tree(void)
 {
-	__unflatten_device_tree(initial_boot_params, NULL, &of_root,
+	__unflatten_device_tree(initial_boot_params, NULL, &of_root,  /* 将DTB展开为struct device_node型的数据结构，赋给全局变量of_root */
 				early_init_dt_alloc_memory_arch, false);
 
 	/* Get pointer to "/chosen" and "/aliases" nodes for use everywhere */
-	of_alias_scan(early_init_dt_alloc_memory_arch);
+	of_alias_scan(early_init_dt_alloc_memory_arch);  /* 处理alias */
 
 	unittest_unflatten_overlay_base();
 }

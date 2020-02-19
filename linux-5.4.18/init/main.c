@@ -595,7 +595,7 @@ asmlinkage __visible void __init start_kernel(void)
 	page_address_init();  /* mm/highmem.c */
 	pr_notice("%s", linux_banner);
 	early_security_init();
-	setup_arch(&command_line);  /* 为局部变量command_line赋值  。   */
+	setup_arch(&command_line);  /* 体系架构相关的初始化，包括内核命令行、设备树、内存等。**重要** */
 	setup_command_line(command_line);  /* ？？？？？将command_line备份到其他多个变量里 */
 	setup_nr_cpu_ids();  /* 为全局变量nr_cpu_ids赋值。其值为硬件CPU数目，注意不是online CPU数目 */
 	setup_per_cpu_areas();  /* 为per CPU变量预留空间。多核下，arm架构 mm/percpu.c:2960，arm64架构 mm/percpu.c:2960 或 /arch/arm64/mm/numa.c:140 */

@@ -2029,7 +2029,7 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		    !strcmp(pp->name, "linux,phandle"))
 			continue;
 
-		np = of_find_node_by_path(pp->value);
+		np = of_find_node_by_path(pp->value);  /* alias节点的value是某个节点的路径 */
 		if (!np)
 			continue;
 

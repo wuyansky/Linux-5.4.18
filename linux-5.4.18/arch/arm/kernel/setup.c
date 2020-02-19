@@ -842,16 +842,16 @@ static int __init early_mem(char *p)
 early_param("mem", early_mem);
 
 static void __init request_standard_resources(const struct machine_desc *mdesc)
-{
+{	/* 为内核代码段、内核数据段、显存等申请内存空间 */
 	struct memblock_region *region;
 	struct resource *res;
 
-	kernel_code.start   = virt_to_phys(_text);
+	kernel_code.start   = virt_to_phys(_text);	/* 将内核代码段的起始、结束地址保存到全局变量kernel_code里 */
 	kernel_code.end     = virt_to_phys(__init_begin - 1);
-	kernel_data.start   = virt_to_phys(_sdata);
+	kernel_data.start   = virt_to_phys(_sdata);	/* 将内核数据段的起始、结束地址保存到全局变量kernel_data里 */
 	kernel_data.end     = virt_to_phys(_end - 1);
 
-	for_each_memblock(memory, region) {
+	for_each_memblock(memory, region) {  /* 遍历之前注册的所有内存段 */
 		phys_addr_t start = __pfn_to_phys(memblock_region_memory_base_pfn(region));
 		phys_addr_t end = __pfn_to_phys(memblock_region_memory_end_pfn(region)) - 1;
 		unsigned long boot_alias_start;
@@ -1130,14 +1130,14 @@ void __init setup_arch(char **cmdline_p)
 	early_ioremap_reset();  /* 似乎没干啥 */
 
 	paging_init(mdesc);  /* 建立页表，初始化memory zone */
-	request_standard_resources(mdesc);  /* ？？？ */
+	request_standard_resources(mdesc);  /* 为内核代码段、内核数据段、显存等申请内存空间 */
 
 	if (mdesc->restart)
 		arm_pm_restart = mdesc->restart;
 
-	unflatten_device_tree();
+	unflatten_device_tree();  /* 将DTB展开为struct device_node型的数据结构 */
 
-	arm_dt_init_cpu_maps();
+	arm_dt_init_cpu_maps();   /* 处理"/cpus"节点 */
 	psci_dt_init();  /* PSCI, Power State Coordination Interface，由ARM定义的电源管理接口规范。暂不深究 */
 #ifdef CONFIG_SMP  /* 多核的初始化，暂不深究 */
 	if (is_smp()) {

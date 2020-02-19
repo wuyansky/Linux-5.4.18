@@ -64,7 +64,7 @@ static inline int set_smp_ops_by_method(struct device_node *node)
  * Updates the cpu possible mask with the number of parsed cpu nodes
  */
 void __init arm_dt_init_cpu_maps(void)
-{
+{	/* 遍历"/cpus"节点，处理其逻辑 */
 	/*
 	 * Temp logical map is initialized with UINT_MAX values that are
 	 * considered invalid logical map entries since the logical map must
