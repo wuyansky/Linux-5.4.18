@@ -139,8 +139,8 @@ static char *static_command_line;
 /* Command line for per-initcall parameter parsing */
 static char *initcall_command_line;
 
-static char *execute_command;
-static char *ramdisk_execute_command;
+static char *execute_command;  /* 启动命令行里传递而来的init可执行文件的路径 */
+static char *ramdisk_execute_command;  /* ramdisk里的init可执行文件的路径 */
 
 /*
  * Used to generate warnings if static_key manipulation functions are used
@@ -335,7 +335,7 @@ static int __init init_setup(char *str)
 {
 	unsigned int i;
 
-	execute_command = str;
+	execute_command = str;  /* 将init进程的名字保存到全局变量execute_command里 */
 	/*
 	 * In case LILO is going to boot us with default command line,
 	 * it prepends "auto" before the whole cmdline which makes
@@ -346,7 +346,7 @@ static int __init init_setup(char *str)
 		argv_init[i] = NULL;
 	return 1;
 }
-__setup("init=", init_setup);
+__setup("init=", init_setup);    /* 从启动命令行里解析"init="后面的值，传递给init_setup() */
 
 static int __init rdinit_setup(char *str)
 {
@@ -408,28 +408,28 @@ noinline void __ref rest_init(void)
 	struct task_struct *tsk;
 	int pid;
 
-	rcu_scheduler_starting();
+	rcu_scheduler_starting();  /* 看不懂。先不管了 */
 	/*
 	 * We need to spawn init first so that it obtains pid 1, however
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
-	pid = kernel_thread(kernel_init, NULL, CLONE_FS);
+	pid = kernel_thread(kernel_init, NULL, CLONE_FS);  /* ***很重要*** 创建第一个内核线程kernel_init()，PID=1，但还不能够去调度它 */
 	/*
 	 * Pin init on the boot CPU. Task migration is not properly working
 	 * until sched_init_smp() has been run. It will set the allowed
 	 * CPUs for init to the non isolated CPUs.
 	 */
-	rcu_read_lock();
-	tsk = find_task_by_pid_ns(pid, &init_pid_ns);
-	set_cpus_allowed_ptr(tsk, cpumask_of(smp_processor_id()));
-	rcu_read_unlock();
+	rcu_read_lock();	/* 上锁。无需深究 */
+	tsk = find_task_by_pid_ns(pid, &init_pid_ns);  /* 看不懂。不重要 */
+	set_cpus_allowed_ptr(tsk, cpumask_of(smp_processor_id()));   /* 看不懂。不重要 */
+	rcu_read_unlock();	/* 解锁。无需深究 */
 
-	numa_default_policy();
-	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
-	rcu_read_lock();
-	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
-	rcu_read_unlock();
+	numa_default_policy();  /* NUMA相关。与我们无关 */
+	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);  /* ***很重要*** 创建第二个内核线程kthreadd()，PID=2，负责启动其它内核线程 */
+	rcu_read_lock();	/* 上锁。无需深究 */
+	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);  /* 看不懂。不重要 */
+	rcu_read_unlock();	/* 解锁。无需深究 */
 
 	/*
 	 * Enable might_sleep() and smp_processor_id() checks.
@@ -440,15 +440,15 @@ noinline void __ref rest_init(void)
 	 */
 	system_state = SYSTEM_SCHEDULING;
 
-	complete(&kthreadd_done);
+	complete(&kthreadd_done);	/* 释放完成量，给 kernel_init() --> kernel_init_freeable()，于是kernel_init()线程就能够继续执行了 */
 
 	/*
 	 * The boot idle thread must execute schedule()
 	 * at least once to get things moving:
 	 */
-	schedule_preempt_disabled();
+	schedule_preempt_disabled();  /* 在关抢占的情况下，启动调度 */
 	/* Call into cpu_idle with preempt disabled */
-	cpu_startup_entry(CPUHP_ONLINE);
+	cpu_startup_entry(CPUHP_ONLINE);  /* 让CPU执行IDLE操作。没太懂 */
 }
 
 /* Check for early params. */
@@ -622,7 +622,7 @@ asmlinkage __visible void __init start_kernel(void)
 	 * kmem_cache_init()
 	 */
 	setup_log_buf(0);
-	vfs_caches_init_early();  /* 初始化VFS所需的缓存（for dcache、inode等） */
+	vfs_caches_init_early();  /* 初始化VFS（虚拟文件系统）所需的缓存（dcache、inode等） */
 	sort_main_extable();  /* 对内核内置的exception table进行排序。不懂 */
 	trap_init();  /* 空函数 */
 	mm_init();  /* init/main.c: Line549。内存初始化。太复杂了，看不懂 */
@@ -671,8 +671,8 @@ asmlinkage __visible void __init start_kernel(void)
 
 	context_tracking_init();  /* 看不懂。不关心 */
 	/* init some links before init_ISA_irqs() */
-	early_irq_init();  /* 看不懂 */
-	init_IRQ();  /* 初始化中断控制器 */
+	early_irq_init();	/* 看不懂 */
+	init_IRQ();			/* 初始化中断控制器 */
 	tick_init();  		/* 没看懂 */
 	rcu_init_nohz();	/* 没看懂 */
 	init_timers();		/* 没看懂 */
@@ -742,7 +742,7 @@ asmlinkage __visible void __init start_kernel(void)
 	}
 #endif
 	setup_per_cpu_pageset();  /* 没看懂 */
-	numa_policy_init();  /* NUMA (Non-Uniform Memory Access Architecture)。NUMA技术有效结合了SMP系统易编程性和MPP（大规模并行）系统易扩展性的特点，较好解决了SMP系统的可扩展性问题，已成为当今高性能服务器的主流体系结构之一。与我们无关 */
+	numa_policy_init();  /* NUMA (Non-Uniform Memory Access Architecture) 初始化。SMP与服务器并行相关，与我们无关 */
 	acpi_early_init();  /* ACPI (Advanced Configuration and Power Management Interface)，高级配置和电源管理接口。x86平台上的东西，与ARM无关 */
 	if (late_time_init)
 		late_time_init();  /* 其实就是执行了 arch/arm/kernel/smp_twd.c: twd_timer_setup()。Timer初始化相关，暂不深究 */
@@ -754,41 +754,41 @@ asmlinkage __visible void __init start_kernel(void)
 	if (efi_enabled(EFI_RUNTIME_SERVICES))
 		efi_enter_virtual_mode();
 #endif
-	thread_stack_cache_init();
-	cred_init();
-	fork_init();
-	proc_caches_init();
-	uts_ns_init();
-	buffer_init();
-	key_init();
-	security_init();
-	dbg_late_init();
-	vfs_caches_init();
-	pagecache_init();
-	signals_init();
-	seq_file_init();
-	proc_root_init();
-	nsfs_init();
-	cpuset_init();
-	cgroup_init();
-	taskstats_init_early();
-	delayacct_init();
+	thread_stack_cache_init();  /* 不关心 */
+	cred_init();	/* 信任证书初始化。不关心 */
+	fork_init();	/* fork机制初始化。不关心 */
+	proc_caches_init();	/* 进程创建相关。不关心 */
+	uts_ns_init();	/* UTS (UNIX Time-sharing System namespace) 提供了主机名和域名的隔离。能够使得子进程有独立的主机名和域名(hostname)，这一特性在Docker容器技术中被用到。不关心 */
+	buffer_init();	/* 缓存系统初始化。不关心 */
+	key_init();		/* 内核密钥管理系统初始化。不关心 */
+	security_init();	/* 安全框架初始化。不关心 */
+	dbg_late_init();	/* 内核调试工具（kgdb、kdb）初始化。不关心 */
+	vfs_caches_init();	/* VFS的缓存初始化。See also Line625。不关心 */
+	pagecache_init();	/* 文件page cache初始化。不关心 */
+	signals_init();		/* 信号机制初始化。不关心 */
+	seq_file_init();	/* Seq file初始化。不关心 */
+	proc_root_init();	/* proc文件系统初始化。不关心 */
+	nsfs_init();	/* NSFS (Name Space File System) 初始化。不关心 */
+	cpuset_init();	/* 初始化cpuset。不关心 */
+	cgroup_init();	/* 初始化cgroup。不关心 */
+	taskstats_init_early();	/* 初始化taskstats（用于向用户空间导出各个任务的统计信息）。不关心 */
+	delayacct_init();	/* 初始化delayacct（per-task delay accounting）。不关心 */
 
-	poking_init();
-	check_bugs();
+	poking_init();	/* 空函数 */
+	check_bugs();	/* arch/arm/kernel/bugs.c。检查是否有bug。不关心  */
 
-	acpi_subsystem_init();
-	arch_post_acpi_subsys_init();
-	sfi_init_late();
+	acpi_subsystem_init();	/* ACPI相关。不关心 */
+	arch_post_acpi_subsys_init();	/* ACPI相关。不关心 */
+	sfi_init_late();  /* SFI (Simple Firmware Interface) 初始化。不关心 */
 
 	/* Do the rest non-__init'ed, we're now alive */
-	arch_call_rest_init();
+	arch_call_rest_init();	/* 初始化剩余部分 ***重要*** */
 }
 
 /* Call all constructor functions linked into the kernel. */
 static void __init do_ctors(void)
 {
-#ifdef CONFIG_CONSTRUCTORS
+#ifdef CONFIG_CONSTRUCTORS	/* 该配置项未启用。相当于空函数 */
 	ctor_fn_t *fn = (ctor_fn_t *) __ctors_start;
 
 	for (; fn < (ctor_fn_t *) __ctors_end; fn++)
@@ -1024,12 +1024,12 @@ static void __init do_initcalls(void)
  */
 static void __init do_basic_setup(void)
 {
-	cpuset_init_smp();
-	driver_init();
-	init_irq_proc();
-	do_ctors();
-	usermodehelper_enable();
-	do_initcalls();
+	cpuset_init_smp();	/* 多核相关。没看懂 */
+	driver_init();	/* ***重要*** 设备驱动初始化 */
+	init_irq_proc();  /* procfs-irq（/proc/irq/）相关的初始化。 */
+	do_ctors();  	/* 没用到。不关心 */
+	usermodehelper_enable();  /* 不关心 */
+	do_initcalls();	/* 执行所有的initcall函数 */
 }
 
 static void __init do_pre_smp_initcalls(void)
@@ -1056,7 +1056,7 @@ static int try_to_run_init_process(const char *init_filename)
 
 	ret = run_init_process(init_filename);
 
-	if (ret && ret != -ENOENT) {
+	if (ret && ret != -ENOENT) {  /* 出错了 */
 		pr_err("Starting init: %s exists but couldn't execute it (error %d)\n",
 		       init_filename, ret);
 	}
@@ -1107,28 +1107,28 @@ static int __ref kernel_init(void *unused)
 {
 	int ret;
 
-	kernel_init_freeable();
+	kernel_init_freeable();  /* ***重要*** 多核启动、设备驱动的初始化，都在这里执行 */
 	/* need to finish all async __init code before freeing the memory */
 	async_synchronize_full();
-	ftrace_free_init_mem();
-	free_initmem();
-	mark_readonly();
+	ftrace_free_init_mem();  /* 释放ftrace占据的内存。不重要 */
+	free_initmem();		/* 释放被__init标记的内存。不重要 */
+	mark_readonly();	/* 内存保护相关。不关心 */
 
 	/*
 	 * Kernel mappings are now finalized - update the userspace page-table
 	 * to finalize PTI.
 	 */
-	pti_finalize();
+	pti_finalize();	/* x86相关。不关心 */
 
 	system_state = SYSTEM_RUNNING;
-	numa_default_policy();
+	numa_default_policy();  /* 与我们无关 */
 
-	rcu_end_inkernel_boot();
+	rcu_end_inkernel_boot();  /* 暂不关心 */
 
-	if (ramdisk_execute_command) {
-		ret = run_init_process(ramdisk_execute_command);
+	if (ramdisk_execute_command) {  /* 如果ramdisk里的init进程有效，则运行之 */
+		ret = run_init_process(ramdisk_execute_command);  /* @QUESTION: 执行完毕之后还会返回么？ */
 		if (!ret)
-			return 0;
+			return 0;  /* 成功 */    /* @QUESTION: 为什么直接返回了呢？此Task不是应该永不返回的么？ */
 		pr_err("Failed to execute %s (error %d)\n",
 		       ramdisk_execute_command, ret);
 	}
@@ -1139,19 +1139,19 @@ static int __ref kernel_init(void *unused)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
-	if (execute_command) {
+	if (execute_command) {  /* 如果启动命令行里指定了init进程，则运行之 */
 		ret = run_init_process(execute_command);
 		if (!ret)
-			return 0;
+			return 0;  /* 成功 */
 		panic("Requested init %s failed (error %d).",
 		      execute_command, ret);
 	}
-	if (!try_to_run_init_process("/sbin/init") ||
+	if (!try_to_run_init_process("/sbin/init") ||  /* 依次尝试运行如下进程 */
 	    !try_to_run_init_process("/etc/init") ||
 	    !try_to_run_init_process("/bin/init") ||
 	    !try_to_run_init_process("/bin/sh"))
-		return 0;
-
+		return 0;  /* 成功 */
+	/* 没找到init进程。挂了... */
 	panic("No working init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/admin-guide/init.rst for guidance.");
 }
@@ -1161,7 +1161,7 @@ static noinline void __init kernel_init_freeable(void)
 	/*
 	 * Wait until kthreadd is all set-up.
 	 */
-	wait_for_completion(&kthreadd_done);
+	wait_for_completion(&kthreadd_done);  /* 等待完成量。该完成量由rest_init()释放，见Line443  */
 
 	/* Now the scheduler is fully set up and can do blocking allocations */
 	gfp_allowed_mask = __GFP_BITS_MASK;
@@ -1182,14 +1182,14 @@ static noinline void __init kernel_init_freeable(void)
 	do_pre_smp_initcalls();
 	lockup_detector_init();
 
-	smp_init();
+	smp_init();	/* 启动多核 */
 	sched_init_smp();
 
 	page_alloc_init_late();
 	/* Initialize page ext after all struct pages are initialized. */
 	page_ext_init();
 
-	do_basic_setup();
+	do_basic_setup();  /* ***重要*** */
 
 	/* Open the /dev/console on the rootfs, this should never fail */
 	if (ksys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)

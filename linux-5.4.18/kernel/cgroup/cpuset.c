@@ -2890,7 +2890,7 @@ struct cgroup_subsys cpuset_cgrp_subsys = {
  **/
 
 int __init cpuset_init(void)
-{
+{	/* cpuset是Linux控制组（Cgroup）之一，其功能是指定特定的进程或线程所使用的CPU组。另外，除CPU以外，同样还能指定内存节点的分配。以前的内核具有CPU affinity功能，该功能将线程分配给特定CPU。现在的内核中虽然也有affinity（taskset命令），但推荐使用cpuset。见 https://www.cnblogs.com/tcicy/p/8552697.html */
 	BUG_ON(percpu_init_rwsem(&cpuset_rwsem));
 
 	BUG_ON(!alloc_cpumask_var(&top_cpuset.cpus_allowed, GFP_KERNEL));

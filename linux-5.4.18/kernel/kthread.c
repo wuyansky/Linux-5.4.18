@@ -268,7 +268,7 @@ int tsk_fork_get_node(struct task_struct *tsk)
 }
 
 static void create_kthread(struct kthread_create_info *create)
-{
+{	/* 与此函数类似的还有一个宏 kthread_create()，在include/linux/kthread.h里定义 */
 	int pid;
 
 #ifdef CONFIG_NUMA
@@ -566,7 +566,7 @@ int kthread_stop(struct task_struct *k)
 EXPORT_SYMBOL(kthread_stop);
 
 int kthreadd(void *unused)
-{
+{	/* 内核线程的守护线程。用于启动其他的内核线程 */
 	struct task_struct *tsk = current;
 
 	/* Setup a clean context for our children to inherit. */
@@ -580,20 +580,20 @@ int kthreadd(void *unused)
 
 	for (;;) {
 		set_current_state(TASK_INTERRUPTIBLE);
-		if (list_empty(&kthread_create_list))
-			schedule();
+		if (list_empty(&kthread_create_list))  /* 如果list为空 */      /* 全局变量kthread_create_list在上面Line29定义 */
+			schedule();  /* 则调度出去，本任务进入睡眠状态（TASK_INTERRUPTIBLE） */
 		__set_current_state(TASK_RUNNING);
 
 		spin_lock(&kthread_create_lock);
-		while (!list_empty(&kthread_create_list)) {
+		while (!list_empty(&kthread_create_list)) {  /* 遍历 kthread_create_list */
 			struct kthread_create_info *create;
 
-			create = list_entry(kthread_create_list.next,
+			create = list_entry(kthread_create_list.next,  /* 取出list里的一个元素 */
 					    struct kthread_create_info, list);
 			list_del_init(&create->list);
 			spin_unlock(&kthread_create_lock);
 
-			create_kthread(create);
+			create_kthread(create);  /* 创建这个线程 */
 
 			spin_lock(&kthread_create_lock);
 		}

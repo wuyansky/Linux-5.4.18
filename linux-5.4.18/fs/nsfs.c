@@ -277,7 +277,7 @@ static struct file_system_type nsfs = {
 };
 
 void __init nsfs_init(void)
-{
+{	/* the nsfs filesystem is a virtual filesystem making Linux-kernel namespaces available. See https://unix.stackexchange.com/questions/465669/what-is-the-nsfs-filesystem */
 	nsfs_mnt = kern_mount(&nsfs);
 	if (IS_ERR(nsfs_mnt))
 		panic("can't set nsfs up\n");

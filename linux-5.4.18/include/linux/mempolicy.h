@@ -5,7 +5,7 @@
  */
 #ifndef _LINUX_MEMPOLICY_H
 #define _LINUX_MEMPOLICY_H 1
-
+/* NUMA (Non-Uniform Memory Access Architecture)。NUMA技术有效结合了SMP系统易编程性和MPP（大规模并行）系统易扩展性的特点，较好解决了SMP系统的可扩展性问题，已成为当今高性能服务器的主流体系结构之一 */
 
 #include <linux/mmzone.h>
 #include <linux/dax.h>

@@ -2432,7 +2432,7 @@ long do_fork(unsigned long clone_flags,
  * Create a kernel thread.
  */
 pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
-{
+{	/* 与此函数类似的还有一个宏 kthread_create()，在include/linux/kthread.h里定义。kernel_thread()和kthread_create()的区别：（1）kthread_create()创建的内核线程有干净的上下文环境，适合于驱动模块或用户空间的程序创建内核线程使用，不会把某些内核信息暴露给用户程序；（2）二者创建的进程的父进程不同：由kthread_create()创建的进程的父进程被指定为kthreadd, 而kernel_thread()创建的进程的父进程可以是init或其他内核线程 */
 	struct kernel_clone_args args = {
 		.flags		= ((flags | CLONE_VM | CLONE_UNTRACED) & ~CSIGNAL),
 		.exit_signal	= (flags & CSIGNAL),
