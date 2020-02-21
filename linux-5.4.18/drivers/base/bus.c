@@ -487,7 +487,7 @@ void bus_probe_device(struct device *dev)
 		return;
 
 	if (bus->p->drivers_autoprobe)
-		device_initial_probe(dev);
+		device_initial_probe(dev);  /* 重点 */
 
 	mutex_lock(&bus->p->mutex);
 	list_for_each_entry(sif, &bus->p->interfaces, node)
@@ -618,7 +618,7 @@ int bus_add_driver(struct device_driver *drv)
 
 	klist_add_tail(&priv->knode_bus, &bus->p->klist_drivers);
 	if (drv->bus->p->drivers_autoprobe) {
-		error = driver_attach(drv);
+		error = driver_attach(drv);  /* 重点 */
 		if (error)
 			goto out_unregister;
 	}

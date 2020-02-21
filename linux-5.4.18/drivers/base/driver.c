@@ -167,7 +167,7 @@ int driver_register(struct device_driver *drv)
 		return -EBUSY;
 	}
 
-	ret = bus_add_driver(drv);
+	ret = bus_add_driver(drv);  /* 重点 */
 	if (ret)
 		return ret;
 	ret = driver_add_groups(drv, drv->groups);

@@ -545,11 +545,11 @@ re_probe:
 	}
 
 	if (dev->bus->probe) {
-		ret = dev->bus->probe(dev);
+		ret = dev->bus->probe(dev);  /* 重点！！！ */
 		if (ret)
 			goto probe_failed;
 	} else if (drv->probe) {
-		ret = drv->probe(dev);
+		ret = drv->probe(dev);  /* 重点！！！ */
 		if (ret)
 			goto probe_failed;
 	}
@@ -718,7 +718,7 @@ int driver_probe_device(struct device_driver *drv, struct device *dev)
 	if (initcall_debug)
 		ret = really_probe_debug(dev, drv);
 	else
-		ret = really_probe(dev, drv);
+		ret = really_probe(dev, drv);  /* 重点 */
 	pm_request_idle(dev);
 
 	if (dev->parent)
@@ -825,7 +825,7 @@ static int __device_attach_driver(struct device_driver *drv, void *_data)
 	if (data->check_async && async_allowed != data->want_async)
 		return 0;
 
-	return driver_probe_device(drv, dev);
+	return driver_probe_device(drv, dev);  /* 重点 */
 }
 
 static void __device_attach_async_helper(void *_dev, async_cookie_t cookie)
@@ -892,7 +892,7 @@ static int __device_attach(struct device *dev, bool allow_async)
 			pm_runtime_get_sync(dev->parent);
 
 		ret = bus_for_each_drv(dev->bus, NULL, &data,
-					__device_attach_driver);
+					__device_attach_driver);  /* 重点: __device_attach_driver() */
 		if (!ret && allow_async && data.have_async) {
 			/*
 			 * If we could not find appropriate driver
@@ -992,7 +992,7 @@ int device_driver_attach(struct device_driver *drv, struct device *dev)
 	 * bound a driver before us just skip the driver probe call.
 	 */
 	if (!dev->p->dead && !dev->driver)
-		ret = driver_probe_device(drv, dev);
+		ret = driver_probe_device(drv, dev);  /* 重点 */
 
 	__device_driver_unlock(dev, dev->parent);
 
@@ -1038,7 +1038,7 @@ static int __driver_attach(struct device *dev, void *data)
 	 * is an error.
 	 */
 
-	ret = driver_match_device(drv, dev);
+	ret = driver_match_device(drv, dev);  /* 重点 */
 	if (ret == 0) {
 		/* no match */
 		return 0;
@@ -1069,7 +1069,7 @@ static int __driver_attach(struct device *dev, void *data)
 		return 0;
 	}
 
-	device_driver_attach(drv, dev);
+	device_driver_attach(drv, dev);  /* 重点 */
 
 	return 0;
 }
@@ -1085,7 +1085,7 @@ static int __driver_attach(struct device *dev, void *data)
  */
 int driver_attach(struct device_driver *drv)
 {
-	return bus_for_each_dev(drv->bus, NULL, drv, __driver_attach);
+	return bus_for_each_dev(drv->bus, NULL, drv, __driver_attach);  /* 重点：执行__driver_attach() */
 }
 EXPORT_SYMBOL_GPL(driver_attach);
 

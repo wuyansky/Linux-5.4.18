@@ -1025,11 +1025,11 @@ static void __init do_initcalls(void)
 static void __init do_basic_setup(void)
 {
 	cpuset_init_smp();	/* 多核相关。没看懂 */
-	driver_init();	/* ***重要*** 设备驱动初始化 */
-	init_irq_proc();  /* procfs-irq（/proc/irq/）相关的初始化。 */
-	do_ctors();  	/* 没用到。不关心 */
+	driver_init();		/* ***重要*** 设备驱动初始化 */
+	init_irq_proc();  	/* procfs-irq（/proc/irq/）相关的初始化。 */
+	do_ctors();  		/* 没用到。不关心 */
 	usermodehelper_enable();  /* 不关心 */
-	do_initcalls();	/* 执行所有的initcall函数 */
+	do_initcalls();		/* 执行所有的initcall函数 */
 }
 
 static void __init do_pre_smp_initcalls(void)

@@ -228,26 +228,26 @@ out:
 }
 
 void __init of_core_init(void)
-{
+{	/* 向sysfs和procfs里添加"devicetree"目录项 */
 	struct device_node *np;
 
-	of_populate_phandle_cache();
+	of_populate_phandle_cache();  /* 没看懂 */
 
 	/* Create the kset, and register existing nodes */
 	mutex_lock(&of_mutex);
-	of_kset = kset_create_and_add("devicetree", NULL, firmware_kobj);
+	of_kset = kset_create_and_add("devicetree", NULL, firmware_kobj);  /* 在sysfs里添加"firmware/devicetree"目录项 */
 	if (!of_kset) {
 		mutex_unlock(&of_mutex);
 		pr_err("failed to register existing nodes\n");
 		return;
 	}
-	for_each_of_allnodes(np)
-		__of_attach_node_sysfs(np);
+	for_each_of_allnodes(np)  /* 遍历所有节点 */
+		__of_attach_node_sysfs(np);  /* 将每个节点都添加到"/sys/firmware/devicetree"里 */
 	mutex_unlock(&of_mutex);
 
 	/* Symlink in /proc as required by userspace ABI */
 	if (of_root)
-		proc_symlink("device-tree", NULL, "/sys/firmware/devicetree/base");
+		proc_symlink("device-tree", NULL, "/sys/firmware/devicetree/base");  /* 将/proc/device-tree链接到/sys/firmware/devicetree/base */
 }
 
 static struct property *__of_find_property(const struct device_node *np,

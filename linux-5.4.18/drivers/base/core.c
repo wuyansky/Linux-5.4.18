@@ -2199,7 +2199,7 @@ int device_add(struct device *dev)
 					     BUS_NOTIFY_ADD_DEVICE, dev);
 
 	kobject_uevent(&dev->kobj, KOBJ_ADD);
-	bus_probe_device(dev);
+	bus_probe_device(dev);  /* 重点 */
 	if (parent)
 		klist_add_tail(&dev->p->knode_parent,
 			       &parent->p->klist_children);
@@ -2272,7 +2272,7 @@ EXPORT_SYMBOL_GPL(device_add);
 int device_register(struct device *dev)
 {
 	device_initialize(dev);
-	return device_add(dev);
+	return device_add(dev);  /* 重点 */
 }
 EXPORT_SYMBOL_GPL(device_register);
 
@@ -2605,7 +2605,7 @@ struct device *device_find_child_by_name(struct device *parent,
 EXPORT_SYMBOL_GPL(device_find_child_by_name);
 
 int __init devices_init(void)
-{
+{	/* 创建对应的kset和kobj，并将其注册到sysfs里 */
 	devices_kset = kset_create_and_add("devices", &device_uevent_ops, NULL);
 	if (!devices_kset)
 		return -ENOMEM;

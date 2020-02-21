@@ -1303,7 +1303,7 @@ int __init platform_bus_init(void)
 
 	early_platform_cleanup();
 
-	error = device_register(&platform_bus);
+	error = device_register(&platform_bus);  /* 重点 */
 	if (error) {
 		put_device(&platform_bus);
 		return error;
