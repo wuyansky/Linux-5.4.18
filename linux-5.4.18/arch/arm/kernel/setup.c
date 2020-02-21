@@ -1077,7 +1077,7 @@ void __init setup_arch(char **cmdline_p)
 {
 	const struct machine_desc *mdesc;
 
-	setup_processor();
+	setup_processor();  /* 再次检测处理器类型，并初始化处理器相关的底层变量，内核启动过程中的处理器信息就是该函数打印的 */
 	mdesc = setup_machine_fdt(__atags_pointer);  /* __atags_pointer是设备树在内存里的物理地址。见arch/arm/kernel/head-common.S: .long __machine_arch_type @ r1 */
 	if (!mdesc)
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);  /* 这是旧的内核传参机制，称为ATAGS。已被设备树替代，无需过多关注。 */

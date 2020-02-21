@@ -352,7 +352,7 @@ void cpu_startup_entry(enum cpuhp_state state)
 	arch_cpu_idle_prepare();
 	cpuhp_online_idle(state);
 	while (1)
-		do_idle();
+		do_idle();  /* 内核本体进入idle状态，用循环消耗空闲的CPU时间 */
 }
 
 /*

@@ -7548,7 +7548,7 @@ void __init mem_init_print_info(const char *str)
 	adj_init_size(_sdata, _edata, datasize, __start_rodata, rosize);
 
 #undef	adj_init_size
-
+	/* 打印出内存信息 */
 	pr_info("Memory: %luK/%luK available (%luK kernel code, %luK rwdata, %luK rodata, %luK init, %luK bss, %luK reserved, %luK cma-reserved"
 #ifdef	CONFIG_HIGHMEM
 		", %luK highmem"

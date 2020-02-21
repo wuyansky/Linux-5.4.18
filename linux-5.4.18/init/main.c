@@ -408,7 +408,7 @@ noinline void __ref rest_init(void)
 	struct task_struct *tsk;
 	int pid;
 
-	rcu_scheduler_starting();  /* 看不懂。先不管了 */
+	rcu_scheduler_starting();  /* 启动内核RCU锁机制调度。不关心 */
 	/*
 	 * We need to spawn init first so that it obtains pid 1, however
 	 * the init task will end up wanting to create kthreads, which, if
@@ -421,14 +421,14 @@ noinline void __ref rest_init(void)
 	 * CPUs for init to the non isolated CPUs.
 	 */
 	rcu_read_lock();	/* 上锁。无需深究 */
-	tsk = find_task_by_pid_ns(pid, &init_pid_ns);  /* 看不懂。不重要 */
+	tsk = find_task_by_pid_ns(pid, &init_pid_ns);  /* 获取kthread线程信息。看不懂。不重要 */
 	set_cpus_allowed_ptr(tsk, cpumask_of(smp_processor_id()));   /* 看不懂。不重要 */
 	rcu_read_unlock();	/* 解锁。无需深究 */
 
 	numa_default_policy();  /* NUMA相关。与我们无关 */
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);  /* ***很重要*** 创建第二个内核线程kthreadd()，PID=2，负责启动其它内核线程 */
 	rcu_read_lock();	/* 上锁。无需深究 */
-	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);  /* 看不懂。不重要 */
+	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);  /* 获取kthread线程信息。看不懂。不重要 */
 	rcu_read_unlock();	/* 解锁。无需深究 */
 
 	/*
@@ -446,9 +446,9 @@ noinline void __ref rest_init(void)
 	 * The boot idle thread must execute schedule()
 	 * at least once to get things moving:
 	 */
-	schedule_preempt_disabled();  /* 在关抢占的情况下，启动调度 */
+	schedule_preempt_disabled();  /* 在关抢占的情况下，启动调度（那么抢占是在什么时候再次被开启的呢？） */
 	/* Call into cpu_idle with preempt disabled */
-	cpu_startup_entry(CPUHP_ONLINE);  /* 让CPU执行IDLE操作。没太懂 */
+	cpu_startup_entry(CPUHP_ONLINE);  /* 0号进程在完成上述工作之后，就退化成为IDLE循环，在内核态中空转。 */
 }
 
 /* Check for early params. */
@@ -555,7 +555,7 @@ static void __init mm_init(void)
 	page_ext_init_flatmem();
 	init_debug_pagealloc();
 	report_meminit();
-	mem_init();
+	mem_init();  /* 看这里 */
 	kmem_cache_init();
 	kmemleak_init();
 	pgtable_init();
@@ -578,8 +578,8 @@ asmlinkage __visible void __init start_kernel(void)
 	char *command_line;
 	char *after_dashes;
 
-	set_task_stack_end_magic(&init_task);  /* 在栈底设置魔数，以便检查栈是否损坏。init_task的定义：init/init_task.c line 56 */
-	smp_setup_processor_id();  /* defined in arch/arm(64)/kernel/setup.c */
+	set_task_stack_end_magic(&init_task);  /* 在栈底设置魔数，以便检查栈是否损坏。init_task的定义：init/init_task.c line 56，它是0号进程。它会创建出1号进程（init）和2号进程（kthreadd），然后自己退化成IDLE进程 */
+	smp_setup_processor_id();  /* 针对SMP处理器。见 arch/arm(64)/kernel/setup.c */
 	debug_objects_early_init();  /* defined in lib/debugobjects.c */
 
 	cgroup_init_early();
@@ -593,10 +593,10 @@ asmlinkage __visible void __init start_kernel(void)
 	 */
 	boot_cpu_init();  /* Activate the first processor */
 	page_address_init();  /* mm/highmem.c */
-	pr_notice("%s", linux_banner);
+	pr_notice("%s", linux_banner);	/* 打印内核版本信息，内核启动的第一行信息就来自这里 */
 	early_security_init();
 	setup_arch(&command_line);  /* 体系架构相关的初始化，包括内核命令行、设备树、内存等。**重要** */
-	setup_command_line(command_line);  /* ？？？？？将command_line备份到其他多个变量里 */
+	setup_command_line(command_line);  /* 将command_line备份到其他多个全局变量里 */
 	setup_nr_cpu_ids();  /* 为全局变量nr_cpu_ids赋值。其值为硬件CPU数目，注意不是online CPU数目 */
 	setup_per_cpu_areas();  /* 为per CPU变量预留空间。多核下，arm架构 mm/percpu.c:2960，arm64架构 mm/percpu.c:2960 或 /arch/arm64/mm/numa.c:140 */
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
@@ -625,7 +625,7 @@ asmlinkage __visible void __init start_kernel(void)
 	vfs_caches_init_early();  /* 初始化VFS（虚拟文件系统）所需的缓存（dcache、inode等） */
 	sort_main_extable();  /* 对内核内置的exception table进行排序。不懂 */
 	trap_init();  /* 空函数 */
-	mm_init();  /* init/main.c: Line549。内存初始化。太复杂了，看不懂 */
+	mm_init();  /* init/main.c: Line549。内存初始化。启动过程中的内存信息来自这里。太复杂了，看不懂 */
 
 	ftrace_init();  /* ftrace是用于内核故障调试和性能分析的工具。暂不关心 */
 
@@ -675,10 +675,10 @@ asmlinkage __visible void __init start_kernel(void)
 	init_IRQ();			/* 初始化中断控制器 */
 	tick_init();  		/* 没看懂 */
 	rcu_init_nohz();	/* 没看懂 */
-	init_timers();		/* 没看懂 */
+	init_timers();		/* 下面这4个函数是软中断和内核时钟机制初始化。没看懂 */
 	hrtimers_init();	/* 没细看 */
 	softirq_init();		/* 没细看 */
-	timekeeping_init();	/* 初始化系统时钟计时。没细看 */
+	timekeeping_init();	/* 初始化系统时钟计时。在此之前，所有的时间戳都是零。没细看 */
 
 	/* 这一段都是与随机数和熵相关的代码。与体系架构关心不大，无需关心。
 	 * For best initial stack canary（金丝雀，这里是“预警”的意思） entropy（熵）, prepare it after:
@@ -691,7 +691,7 @@ asmlinkage __visible void __init start_kernel(void)
 	rand_initialize();
 	add_latent_entropy();
 	add_device_randomness(command_line, strlen(command_line));
-	boot_init_stack_canary();
+	boot_init_stack_canary();  /* 初始化栈canary值，canary是用于防止栈溢出攻击的保护字 */
 
 	time_init();  /* 初始化Clock和Timer */
 	printk_safe_init();	/* 针对多核下的printk的初始化，无需关心 */
@@ -1008,7 +1008,7 @@ static void __init do_initcall_level(int level)
 }
 
 static void __init do_initcalls(void)
-{
+{	/* 按照各个内核模块初始化函数所定义的启动级别（1~7），按顺序调用初始化函数 */
 	int level;
 
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
