@@ -477,7 +477,7 @@ struct of_intc_desc {
  * and calls their initialization functions in order with parents first.
  */
 void __init of_irq_init(const struct of_device_id *matches)
-{	/* 在设备树里寻找中断控制器（可能有多个），调用其初始化函数，分别对其进行初始化 */
+{	/* 在设备树里寻找中断控制器（可能有多个），调用驱动里注册的初始化函数，对其进行初始化 */
 	const struct of_device_id *match;
 	struct device_node *np, *parent = NULL;
 	struct of_intc_desc *desc, *temp_desc;

@@ -137,10 +137,10 @@ char *saved_command_line;
 /* Command line for parameter parsing */
 static char *static_command_line;
 /* Command line for per-initcall parameter parsing */
-static char *initcall_command_line;
+static char *initcall_command_line;  /* 在 do_initcall_level()里被赋值 */
 
 static char *execute_command;  /* 启动命令行里传递而来的init可执行文件的路径 */
-static char *ramdisk_execute_command;  /* ramdisk里的init可执行文件的路径 */
+static char *ramdisk_execute_command;  /* ramdisk里的init可执行文件的路径。可以通过内核命令行"rdinit="来赋值，如果这里没有赋值，则在kernel_init_freeable()里将其赋值为"/init" */
 
 /*
  * Used to generate warnings if static_key manipulation functions are used
@@ -387,7 +387,7 @@ static void __init setup_command_line(char *command_line)
 	static_command_line = memblock_alloc(len, SMP_CACHE_BYTES);
 	if (!static_command_line)
 		panic("%s: Failed to allocate %zu bytes\n", __func__, len);
-
+	/* 这里没有给 initcall_command_line 赋值，而在 do_initcall_level()里对其赋值了  */
 	strcpy(saved_command_line, boot_command_line);
 	strcpy(static_command_line, command_line);
 }
@@ -602,16 +602,16 @@ asmlinkage __visible void __init start_kernel(void)
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 	boot_cpu_hotplug_init();
 
-	build_all_zonelists(NULL);
-	page_alloc_init();
+	build_all_zonelists(NULL);  /* 没看懂 */
+	page_alloc_init();   /* 没看懂 */
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
 	jump_label_init();  /* 性能优化相关，无需关心 */
 	parse_early_param();  /* 这个函数在arch/arm/kernel/setup.c: setup_arch()里被调用过了，因此这里什么也不会做 */
-	after_dashes = parse_args("Booting kernel",  /* 此函数解析到"--"即停止 */
-				  static_command_line, __start___param,  /* 解析static_command_line，匹配__start___param[]里的参数名；若匹配失败，则执行unknown_bootoption() */
-				  __stop___param - __start___param,  /* __start___param和__stop___param都是elf里的段 */
+	after_dashes = parse_args("Booting kernel",  /* 解析内核命令行里要传递给内核模块的参数（module.param=val），将param与kernel image的模块参数段里的.name成员进行匹配。若匹配成功，则将val设置给此模块；否则，执行unknown_bootoption()。此函数解析到"--"即停止 */
+				  static_command_line, __start___param,  /* static_command_line是待解析的内核命令行 */
+				  __stop___param - __start___param,  /* __start___param ~ __stop___param是kernel image里的一个段（__param） */
 				  -1, -1, NULL, &unknown_bootoption);
 	if (!IS_ERR_OR_NULL(after_dashes))  /* "--"之后还有内容。这些内容作为参数传递给init进程 */
 		parse_args("Setting init args", after_dashes, NULL, 0, -1, -1,  /* 解析"--"之后的内容 */
@@ -1008,7 +1008,7 @@ static void __init do_initcall_level(int level)
 }
 
 static void __init do_initcalls(void)
-{	/* 按照各个内核模块初始化函数所定义的启动级别（1~7），按顺序调用初始化函数 */
+{	/* 按照各个内核模块初始化函数的启动级别（1~7），按顺序调用初始化函数 */
 	int level;
 
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)

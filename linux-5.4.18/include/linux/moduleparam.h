@@ -80,7 +80,7 @@ struct kernel_param {
 	};
 };
 
-extern const struct kernel_param __start___param[], __stop___param[];
+extern const struct kernel_param __start___param[], __stop___param[];  /* 这两个变量来自链接脚本里的 __param 段，见 include/asm-generic/vmlinux.lds.h:489。而 __param 段是由本文件里的 module_param() 或 module_param_unsafe() 建立的 */
 
 /* Special one for strings we want to copy into */
 struct kparam_string {

@@ -140,7 +140,7 @@ static int parse_one(char *param,
 				params[i].ops->set);
 			kernel_param_lock(params[i].mod);  /* 加锁，不管它 */
 			if (param_check_unsafe(&params[i]))
-				err = params[i].ops->set(val, &params[i]);  /* 这一句是核心！将val设置给params[i] （前面已经匹配过param名字了） */
+				err = params[i].ops->set(val, &params[i]);  /* 这一句是核心！将来自内核命令行的val设置给内核模块参数params[i] （前面已经匹配过param名字了） */
 			else
 				err = -EPERM;
 			kernel_param_unlock(params[i].mod);  /* 解锁，不管它 */
