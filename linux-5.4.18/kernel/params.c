@@ -94,7 +94,7 @@ bool parameqn(const char *a, const char *b, size_t n)  /* 检查长度为n的字
 
 bool parameq(const char *a, const char *b)  /* 检查字符串a和b是否完全相等（不区分'-'和'_'） */
 {
-	return parameqn(a, b, strlen(a)+1);
+	return parameqn(a, b, strlen(a)+1);  /* 注意这里，参与比较的长度是 a的长度+1。由于调用方do_early_param()传进来的a是从CMDLINE解析而来的参数名，不含等号。这就使得__setup("myname=", myfunc);这样的宏也能正常使用（注意"myname"后面多了一个等号） */
 }
 
 static bool param_check_unsafe(const struct kernel_param *kp)

@@ -452,16 +452,16 @@ noinline void __ref rest_init(void)
 }
 
 /* Check for early params. */
-static int __init do_early_param(char *param, char *val,
+static int __init do_early_param(char *param, char *val,  /* param和val是解析CMDLINE得到的一队参数名和参数值。比如CMDLINE中包含"console=ttyS0,115200"，则解析到此语句时，param为"console"，val为"ttyS0,115200" */
 				 const char *unused, void *arg)  /* 这两个参数都没用 */
 {
 	const struct obs_kernel_param *p;
 
-	for (p = __setup_start; p < __setup_end; p++) {  /* 遍历elf的某个段，此段是一个struct obs_kernel_param型的数组 */
-		if ((p->early && parameq(param, p->str)) ||  /* 若该数组元素的early标志有效，且参数名等于param */
-		    (strcmp(param, "console") == 0 &&  /* 或elf里的参数名为"earlycon"，同时param等于"console"（即通过U-Boot参数指定了控制台） */
-		     strcmp(p->str, "earlycon") == 0)
-		) {
+	for (p = __setup_start; p < __setup_end; p++) {  /* 遍历kernel image的某个段，此段是一个struct obs_kernel_param型的数组，由__setup()或early_param()宏建立 */
+		if ((p->early && parameq(param, p->str)) ||  /* 若该数组元素的early标志有效（即该数组元素是由early_param()宏生成的），且参数名等于param */
+		    (strcmp(param, "console") == 0 &&  /* 用CMDLINE里的"console"去匹配驱动代码里的"earlycon"。 */
+		     strcmp(p->str, "earlycon") == 0)  /* 比如CMDLINE里有"console=ttyS0,115200"，同时驱动代码里又有__setup("earlycon", xxx_func);或early_param("earlycon", xxx_func);，则执行xxx_func("ttyS0,115200")） */
+		) {                                    /* 见 drivers/tty/serial/earlycon.c: Line227: early_param("earlycon", param_setup_earlycon); */
 			if (p->setup_func(val) != 0)  /* 执行动作 */
 				pr_warn("Malformed early option '%s'\n", param);  /* Malformed: 畸形的 */
 		}
@@ -473,16 +473,16 @@ static int __init do_early_param(char *param, char *val,
 void __init parse_early_options(char *cmdline)
 {
 	parse_args("early options", cmdline, NULL, 0, 0, 0, NULL,  /* TMD，这里给了一堆的NULL和0参数 */
-		   do_early_param);  /* 最终其实执行的逻辑其实很简单: 遍历cmdline，解析出每一组键值对(param, val)，然后执行 do_early_param(param, val, "early options", NULL) */
+		   do_early_param);  /* 其实最终执行的逻辑其实很简单: 遍历cmdline，解析出每一组键值对(param, val)，然后执行 do_early_param(param, val, "early options", NULL) */
 }
 
 /* Arch code calls this early on, or if not, just before other parsing. */
 void __init parse_early_param(void)
-{
+{	/* 这个函数先在arch/arm/kernel/setup.c:setup_arch()里被调用，然后在init/main.c:start_kernel()里被调用 */
 	static int done __initdata;
 	static char tmp_cmdline[COMMAND_LINE_SIZE] __initdata;
 
-	if (done)
+	if (done)  /* 如果已经被调用过一次了，就直接返回 */
 		return;
 
 	/* All fall through to do_early_param. */
@@ -579,12 +579,12 @@ asmlinkage __visible void __init start_kernel(void)
 	char *after_dashes;
 
 	set_task_stack_end_magic(&init_task);  /* 在栈底设置魔数，以便检查栈是否损坏。init_task的定义：init/init_task.c line 56，它是0号进程。它会创建出1号进程（init）和2号进程（kthreadd），然后自己退化成IDLE进程 */
-	smp_setup_processor_id();  /* 针对SMP处理器。见 arch/arm(64)/kernel/setup.c */
-	debug_objects_early_init();  /* defined in lib/debugobjects.c */
+	smp_setup_processor_id();  /* 针对SMP处理器。不是很懂 */
+	debug_objects_early_init();  /* debug_objects的初始化。非重点。 */
 
-	cgroup_init_early();
+	cgroup_init_early();  /* cgroup（Control Groups）的初始化。它是内核提供的一种可以限制、记录、隔离进程组所使用的物力资源的机制。非重点 */
 
-	local_irq_disable();
+	local_irq_disable();  /* 关全局中断 */
 	early_boot_irqs_disabled = true;  /* defined in this file Line118. This flag is cleared in current function Line703  */
 
 	/*
@@ -594,8 +594,8 @@ asmlinkage __visible void __init start_kernel(void)
 	boot_cpu_init();  /* Activate the first processor */
 	page_address_init();  /* mm/highmem.c */
 	pr_notice("%s", linux_banner);	/* 打印内核版本信息，内核启动的第一行信息就来自这里 */
-	early_security_init();
-	setup_arch(&command_line);  /* 体系架构相关的初始化，包括内核命令行、设备树、内存等。**重要** */
+	early_security_init();  /* 安全机制的早期初始化 */
+	setup_arch(&command_line);  /* **重要** 体系架构相关的初始化，包括内核命令行、设备树、内存等 */
 	setup_command_line(command_line);  /* 将command_line备份到其他多个全局变量里 */
 	setup_nr_cpu_ids();  /* 为全局变量nr_cpu_ids赋值。其值为硬件CPU数目，注意不是online CPU数目 */
 	setup_per_cpu_areas();  /* 为per CPU变量预留空间。多核下，arm架构 mm/percpu.c:2960，arm64架构 mm/percpu.c:2960 或 /arch/arm64/mm/numa.c:140 */
@@ -608,7 +608,7 @@ asmlinkage __visible void __init start_kernel(void)
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
 	jump_label_init();  /* 性能优化相关，无需关心 */
-	parse_early_param();  /* 解析并执行boot_command_line里的early param。这个函数在arch/arm/kernel/setup.c: setup_arch()里被调用过了，因此这里什么也不会做 */
+	parse_early_param();  /* 这个函数在arch/arm/kernel/setup.c: setup_arch()里被调用过了，因此这里什么也不会做 */
 	after_dashes = parse_args("Booting kernel",  /* 此函数解析到"--"即停止 */
 				  static_command_line, __start___param,  /* 解析static_command_line，匹配__start___param[]里的参数名；若匹配失败，则执行unknown_bootoption() */
 				  __stop___param - __start___param,  /* __start___param和__stop___param都是elf里的段 */

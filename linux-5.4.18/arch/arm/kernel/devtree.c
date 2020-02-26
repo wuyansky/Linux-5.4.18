@@ -224,7 +224,7 @@ const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)  /* d
 	if (!dt_phys || !early_init_dt_verify(phys_to_virt(dt_phys)))
 		return NULL;
 
-	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);  /* 将匹配C代码注册的machine与设备树里的"compatible"属性进行匹配，得到最佳匹配，返回其struct machine_desc的指针 */
+	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);  /* 将C代码注册的machine与设备树根节点下的"compatible"属性进行匹配，得到最佳匹配，然后返回其struct machine_desc的指针 */
 
 	if (!mdesc) {  /* 匹配失败，则打印出错误信息 */
 		const char *prop;
@@ -250,7 +250,7 @@ const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)  /* d
 	if (mdesc->dt_fixup)
 		mdesc->dt_fixup();
 
-	early_init_dt_scan_nodes();  /* 从设备树里获取内核命令行、"#size-cells"和"#address-cells"以及内存信息，并将其保存到全局变量或注册到系统里 */
+	early_init_dt_scan_nodes();  /* 从设备树里获取内核命令行、"#size-cells"和"#address-cells"以及可用的内存信息，并将其保存到全局变量或注册到系统里 */
 
 	/* Change machine number to match the mdesc we're using */
 	__machine_arch_type = mdesc->nr;

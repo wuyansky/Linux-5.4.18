@@ -262,7 +262,7 @@ void check_cpu_icache_size(int cpuid)
 #endif
 
 void __init arm_memblock_init(const struct machine_desc *mdesc)
-{	/* 初始化内存，包括内核代码段、initrd、页表、DTB所需的内存、"/memreserve/"和"reserved-memory"所声明的保留内存，以及DMA的连续内存 */
+{	/* 初始化内存，包括内核代码段、initrd、页表、DTB所需的内存，以及设备树里由"/memreserve/"和"reserved-memory"所声明的保留内存，还有DMA的连续内存 */
 	/* Register the kernel text, kernel data and initrd with memblock. */
 	memblock_reserve(__pa(KERNEL_START), KERNEL_END - KERNEL_START);  /* 为内核代码段预留内存 */
 

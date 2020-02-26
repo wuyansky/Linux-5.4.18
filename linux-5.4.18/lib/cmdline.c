@@ -225,7 +225,7 @@ char *next_arg(char *args, char **param, char **val)
 	if (!equals)
 		*val = NULL;
 	else {
-		args[equals] = '\0';
+		args[equals] = '\0';  /* 将"="替换为'\0'，也就是说返回的param里不含"=" */
 		*val = args + equals + 1;
 
 		/* Don't include quotes in value. */

@@ -705,7 +705,7 @@ static void __init setup_processor(void)
 	cpu_cache = *list->cache;
 #endif
 
-	pr_info("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
+	pr_info("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",  /* 打印CPU的型号等信息 */
 		list->cpu_name, midr, midr & 15,
 		proc_arch[cpu_architecture()], get_cr());
 
@@ -1077,7 +1077,7 @@ void __init setup_arch(char **cmdline_p)
 {
 	const struct machine_desc *mdesc;
 
-	setup_processor();  /* 再次检测处理器类型，并初始化处理器相关的底层变量，内核启动过程中的处理器信息就是该函数打印的 */
+	setup_processor();  /* 检测处理器类型，并初始化处理器相关的底层变量。内核启动过程中的处理器信息就是该函数打印的 */
 	mdesc = setup_machine_fdt(__atags_pointer);  /* __atags_pointer是设备树在内存里的物理地址。见arch/arm/kernel/head-common.S: .long __machine_arch_type @ r1 */
 	if (!mdesc)
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);  /* 这是旧的内核传参机制，称为ATAGS。已被设备树替代，无需过多关注。 */
@@ -1123,7 +1123,7 @@ void __init setup_arch(char **cmdline_p)
 	 * before reserving/allocating any mmeory
 	 */
 	adjust_lowmem_bounds();  /* arch/arm/mm/mmu.c */
-	arm_memblock_init(mdesc);  /* 初始化内存 */
+	arm_memblock_init(mdesc);  /* ***重点*** 初始化内存 */
 	/* Memory may have been removed so recalculate the bounds. */
 	adjust_lowmem_bounds();
 

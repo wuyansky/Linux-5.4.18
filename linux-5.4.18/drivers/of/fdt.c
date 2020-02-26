@@ -995,7 +995,7 @@ u64 __init dt_mem_next_cell(int s, const __be32 **cellp)
  */
 int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
 				     int depth, void *data)  /* data参数未使用 */
-{   /* 功能：从设备树里解析内存信息，并将各段内存注册到系统里 */
+{   /* 功能：从设备树里解析可用的内存信息（不含保留内存），并将各段内存注册到系统里 */
 	const char *type = of_get_flat_dt_prop(node, "device_type", NULL);
 	const __be32 *reg, *endp;
 	int l;
@@ -1191,15 +1191,15 @@ void __init early_init_dt_scan_nodes(void)
 	int rc = 0;
 
 	/* Retrieve various information from the /chosen node */
-	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);  /* 搜索设备树，获取最终生效的命令行参数，填充到boot_command_line[]里 */
+	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);  /* 搜索设备树，得出最终生效的命令行参数，填充到boot_command_line[]里 */
 	if (!rc)
 		pr_warn("No chosen node found, continuing without\n");
 
 	/* Initialize {size,address}-cells info */
-	of_scan_flat_dt(early_init_dt_scan_root, NULL);  /* 获取设备树顶层的"#size-cells"和"#address-cells"属性，放到全局变量dt_root_size_cells和dt_root_addr_cells里。若没有匹配到对应节点，则使用默认值 */
+	of_scan_flat_dt(early_init_dt_scan_root, NULL);  /* 获取设备树顶层的"#size-cells"和"#address-cells"的值，放到全局变量dt_root_size_cells和dt_root_addr_cells里。若没有匹配到对应节点，则使用默认值 */
 
 	/* Setup memory, calling early_init_dt_add_memory_arch */
-	of_scan_flat_dt(early_init_dt_scan_memory, NULL);  /* 从设备树里解析内存信息，并将各段内存注册到系统里 */
+	of_scan_flat_dt(early_init_dt_scan_memory, NULL);  /* 从设备树里解析可用的内存信息，并将各段内存注册到系统里 */
 }
 
 bool __init early_init_dt_scan(void *params)
