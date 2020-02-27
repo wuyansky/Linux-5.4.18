@@ -104,8 +104,8 @@ void __init time_init(void)
 		machine_desc->init_time();
 	} else {
 #ifdef CONFIG_COMMON_CLK
-		of_clk_init(NULL);  /* 初始化Clock */
+		of_clk_init(NULL);  /* 初始化所有的clock providers（执行clock驱动里注册的初始化函数） */
 #endif
-		timer_probe();
+		timer_probe();  /* 初始化所有的Timer（执行Timer驱动里注册的初始化函数） */
 	}
 }

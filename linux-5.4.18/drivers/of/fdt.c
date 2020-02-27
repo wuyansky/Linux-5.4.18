@@ -1191,7 +1191,7 @@ void __init early_init_dt_scan_nodes(void)
 	int rc = 0;
 
 	/* Retrieve various information from the /chosen node */
-	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);  /* 搜索设备树，得出最终生效的命令行参数，填充到boot_command_line[]里 */
+	rc = of_scan_flat_dt(early_init_dt_scan_chosen, boot_command_line);  /* 获取最终生效的命令行参数，填充到boot_command_line[]里 */
 	if (!rc)
 		pr_warn("No chosen node found, continuing without\n");
 

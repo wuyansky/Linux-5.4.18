@@ -4198,7 +4198,7 @@ struct of_clk_provider {
 	void *data;
 };
 
-extern struct of_device_id __clk_of_table;
+extern struct of_device_id __clk_of_table;  /* 使用 CLK_OF_DECLARE() 建立的一个段。见include/linux/clk-provider.h。@TODO: 奇怪，为什么到处都找不到__clk_of_table的定义？链接脚本里也没有 */
 static const struct of_device_id __clk_of_table_sentinel
 	__used __section(__clk_of_table_end);
 
@@ -4795,20 +4795,20 @@ int of_clk_detect_critical(struct device_node *np,
  * to follow the dependencies.
  */
 void __init of_clk_init(const struct of_device_id *matches)
-{
+{	/* 初始化所有的clock providers（执行clock驱动里注册的初始化函数）。这些provider是由CLK_OF_DECLARE()注册到系统里的 */
 	const struct of_device_id *match;
 	struct device_node *np;
 	struct clock_provider *clk_provider, *next;
 	bool is_init_done;
 	bool force = false;
-	LIST_HEAD(clk_provider_list);
+	LIST_HEAD(clk_provider_list);  /* 定义了一个list，用于串起所有的clock provider */
 
 	if (!matches)
-		matches = &__clk_of_table;
+		matches = &__clk_of_table;  /* 从kernel image的某个段里来获取Clock信息。这个段由 CLK_OF_DECLARE() 建立 */
 
 	/* First prepare the list of the clocks providers */
-	for_each_matching_node_and_match(np, matches, &match) {
-		struct clock_provider *parent;
+	for_each_matching_node_and_match(np, matches, &match) {  /* 遍历__clk_of_table */
+		struct clock_provider *parent;  /* 定义了一个临时变量，作为当前的clock provider */
 
 		if (!of_device_is_available(np))
 			continue;
@@ -4824,23 +4824,23 @@ void __init of_clk_init(const struct of_device_id *matches)
 			of_node_put(np);
 			return;
 		}
-
-		parent->clk_init_cb = match->data;
-		parent->np = of_node_get(np);
-		list_add_tail(&parent->node, &clk_provider_list);
+		/* 使用从__clk_of_table里解析出来的信息，来初始化parent */
+		parent->clk_init_cb = match->data;  /* CLK_OF_DECLARE()的最后一个参数（.data）作为Clock初始化的回调函数（.clk_init_cb） */
+		parent->np = of_node_get(np);  /* 该clock provider对应的设备树节点 */
+		list_add_tail(&parent->node, &clk_provider_list);  /* 将临时变量parent添加到clk_provider_list里 */
 	}
 
-	while (!list_empty(&clk_provider_list)) {
+	while (!list_empty(&clk_provider_list)) {  /* 这个while循环可能会被执行一次或两次 */
 		is_init_done = false;
-		list_for_each_entry_safe(clk_provider, next,
+		list_for_each_entry_safe(clk_provider, next,  /* 遍历clk_provider_list */
 					&clk_provider_list, node) {
-			if (force || parent_ready(clk_provider->np)) {
+			if (force || parent_ready(clk_provider->np)) {  /* 如果第一次while里，这个if分支一次都没被执行，那么后面的force = true;就会被执行。然后重新进while循环，强制执行此if分支里的内容 */
 
 				/* Don't populate platform devices */
 				of_node_set_flag(clk_provider->np,
 						 OF_POPULATED);
 
-				clk_provider->clk_init_cb(clk_provider->np);
+				clk_provider->clk_init_cb(clk_provider->np);  /* 执行Clock Provider的初始化函数 */
 				of_clk_set_defaults(clk_provider->np, true);
 
 				list_del(&clk_provider->node);

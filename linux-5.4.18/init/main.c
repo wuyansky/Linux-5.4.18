@@ -579,7 +579,7 @@ asmlinkage __visible void __init start_kernel(void)
 	char *after_dashes;
 
 	set_task_stack_end_magic(&init_task);  /* 在栈底设置魔数，以便检查栈是否损坏。init_task的定义：init/init_task.c line 56，它是0号进程。它会创建出1号进程（init）和2号进程（kthreadd），然后自己退化成IDLE进程 */
-	smp_setup_processor_id();  /* 针对SMP处理器。不是很懂 */
+	smp_setup_processor_id();  /* 针对SMP处理器。不是很懂。内核启动的第一行信息来自这里 */
 	debug_objects_early_init();  /* debug_objects的初始化。非重点。 */
 
 	cgroup_init_early();  /* cgroup（Control Groups）的初始化。它是内核提供的一种可以限制、记录、隔离进程组所使用的物力资源的机制。非重点 */
@@ -593,7 +593,7 @@ asmlinkage __visible void __init start_kernel(void)
 	 */
 	boot_cpu_init();  /* Activate the first processor */
 	page_address_init();  /* mm/highmem.c */
-	pr_notice("%s", linux_banner);	/* 打印内核版本信息，内核启动的第一行信息就来自这里 */
+	pr_notice("%s", linux_banner);	/* 打印内核版本信息 */
 	early_security_init();  /* 安全机制的早期初始化 */
 	setup_arch(&command_line);  /* **重要** 体系架构相关的初始化，包括内核命令行、设备树、内存等 */
 	setup_command_line(command_line);  /* 将command_line备份到其他多个全局变量里 */
@@ -693,7 +693,7 @@ asmlinkage __visible void __init start_kernel(void)
 	add_device_randomness(command_line, strlen(command_line));
 	boot_init_stack_canary();  /* 初始化栈canary值，canary是用于防止栈溢出攻击的保护字 */
 
-	time_init();  /* 初始化Clock和Timer */
+	time_init();  /* ***重要*** 初始化Clock和Timer */
 	printk_safe_init();	/* 针对多核下的printk的初始化，无需关心 */
 	perf_event_init();	/* 没看懂 */
 	profile_init();		/* profile是内核诊断工具。不关心 */
