@@ -957,7 +957,7 @@ int __init_or_module do_one_initcall(initcall_t fn)
 
 
 extern initcall_entry_t __initcall_start[];
-extern initcall_entry_t __initcall0_start[];
+extern initcall_entry_t __initcall0_start[];  /* 这些变量都来自链接脚本。它们代表kernel image里的多个与initcall有关的段。这些段里存放着函数指针。这些段由early_initcall()/late_initcall()等宏建立，见include/linux/init.h */
 extern initcall_entry_t __initcall1_start[];
 extern initcall_entry_t __initcall2_start[];
 extern initcall_entry_t __initcall3_start[];
@@ -1003,12 +1003,12 @@ static void __init do_initcall_level(int level)
 		   NULL, &repair_env_string);
 
 	trace_initcall_level(initcall_level_names[level]);
-	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
+	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)  /* initcall_levels[]里包含了kernel image的多个段的起始地址 */
 		do_one_initcall(initcall_from_entry(fn));
 }
 
 static void __init do_initcalls(void)
-{	/* 按照各个内核模块初始化函数的启动级别（1~7），按顺序调用初始化函数 */
+{	/* 遍历kernel image里的多个与initcall有关的段，按照其启动级别（1~7）顺序调用这些段里的函数 */
 	int level;
 
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)

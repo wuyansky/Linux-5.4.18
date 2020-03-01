@@ -224,7 +224,7 @@ const struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)  /* d
 	if (!dt_phys || !early_init_dt_verify(phys_to_virt(dt_phys)))
 		return NULL;
 
-	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);  /* 将C代码注册的machine与设备树根节点下的"compatible"属性进行匹配，得到最佳匹配，然后返回其struct machine_desc的指针 */
+	mdesc = of_flat_dt_match_machine(mdesc_best, arch_get_next_mach);  /* 将驱动里注册的machine（由DT_MACHINE_START()注册，见arch/arm/mach-sunxi/sunxi.c）与设备树根节点下的"compatible"属性进行匹配，得到最佳匹配，然后返回其struct machine_desc的指针 */
 
 	if (!mdesc) {  /* 匹配失败，则打印出错误信息 */
 		const char *prop;
