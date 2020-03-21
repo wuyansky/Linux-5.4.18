@@ -285,18 +285,18 @@ struct property *of_find_property(const struct device_node *np,
 EXPORT_SYMBOL(of_find_property);
 
 struct device_node *__of_find_all_nodes(struct device_node *prev)
-{
+{	/* 功能：找到设备树节点prev的下一个节点（可能是根节点、兄弟节点、子节点或NULL）， 返回其指针 */
 	struct device_node *np;
-	if (!prev) {
-		np = of_root;
-	} else if (prev->child) {
-		np = prev->child;
-	} else {
+	if (!prev) {  /* 如果prev   == NULL */
+		np = of_root;  /* 则返回根节点 */
+	} else if (prev->child) {  /* 如果prev有子节点 */
+		np = prev->child;  /* 则返回子节点 */
+	} else {  /* 其他情况 */
 		/* Walk back up looking for a sibling, or the end of the structure */
 		np = prev;
 		while (np->parent && !np->sibling)
 			np = np->parent;
-		np = np->sibling; /* Might be null at the end of the tree */
+		np = np->sibling; /* Might be null at the end of the tree */  /* 返回兄弟节点 */
 	}
 	return np;
 }
@@ -310,7 +310,7 @@ struct device_node *__of_find_all_nodes(struct device_node *prev)
  * of_node_put() on it when done.
  */
 struct device_node *of_find_all_nodes(struct device_node *prev)
-{
+{	/* 功能：找到设备树节点prev的下一个节点（可能是根节点、兄弟节点、子节点或NULL）， 返回其指针 */
 	struct device_node *np;
 	unsigned long flags;
 
@@ -509,7 +509,7 @@ EXPORT_SYMBOL(of_cpu_node_to_id);
  */
 static int __of_device_is_compatible(const struct device_node *device,
 				     const char *compat, const char *type, const char *name)
-{
+{	/* 功能：将设备树节点与驱动里注册的设备信息进行匹配。匹配规则为：按照特定的优先级，分别比较设备树节点的compatible属性、device_type属性和节点名。返回：匹配的得分。分数越高，则匹配度越高。 */
 	struct property *prop;
 	const char *cp;
 	int index = 0, score = 0;
@@ -1107,18 +1107,17 @@ EXPORT_SYMBOL(of_find_node_with_property);
 static
 const struct of_device_id *__of_match_node(const struct of_device_id *matches,
 					   const struct device_node *node)
-{
+{	/* 功能：将 设备树节点node 与 包含了驱动信息的数组matches[]里的所有元素 进行匹配，返回匹配度最高的matches[]元素的指针 */
 	const struct of_device_id *best_match = NULL;
 	int score, best_score = 0;
 
 	if (!matches)
 		return NULL;
 
-	for (; matches->name[0] || matches->type[0] || matches->compatible[0]; matches++) {
-		score = __of_device_is_compatible(node, matches->compatible,
-						  matches->type, matches->name);
+	for (; matches->name[0] || matches->type[0] || matches->compatible[0]; matches++) {  /* 遍历数组matches */
+		score = __of_device_is_compatible(node, matches->compatible,  /* 将设备树节点与matches[]里的一个元素的信息进行匹配 */
 		if (score > best_score) {
-			best_match = matches;
+			best_match = matches;  /* 将匹配度最高的元素记为best_match */
 			best_score = score;
 		}
 	}
@@ -1159,10 +1158,10 @@ EXPORT_SYMBOL(of_match_node);
  *	Returns a node pointer with refcount incremented, use
  *	of_node_put() on it when done.
  */
-struct device_node *of_find_matching_node_and_match(struct device_node *from,
-					const struct of_device_id *matches,
-					const struct of_device_id **match)
-{	/* 功能：从设备树节点from的下一个节点开始搜索，与matches[]里的元素逐个进行匹配，将匹配到的元素通过match传出。返回：匹配到的设备树节点的指针，或NULL */
+struct device_node *of_find_matching_node_and_match(struct device_node *from,  /* from是遍历设备树的起点（准确地说，是从from的下一个节点开始遍历） */
+					const struct of_device_id *matches,  /* matches是个结构体数组，数组的最后一个元素的各结构体成员为NULL。matches[]由驱动程序生成。每个matches[]代表一份驱动 */
+					const struct of_device_id **match)   /* match是函数的出参，指向匹配度最高的matches[]元素 */
+{	/* 功能：从from的下一个节点开始，将每个节点与数组matches[]里的每个元素进行匹配；一旦匹配，则停下来，将匹配到的元素通过match传出。返回：最匹配的设备树节点的指针，或NULL */
 	struct device_node *np;
 	const struct of_device_id *m;
 	unsigned long flags;
@@ -1171,17 +1170,17 @@ struct device_node *of_find_matching_node_and_match(struct device_node *from,
 		*match = NULL;
 
 	raw_spin_lock_irqsave(&devtree_lock, flags);
-	for_each_of_allnodes_from(from, np) {
-		m = __of_match_node(matches, np);
+	for_each_of_allnodes_from(from, np) {  /* 从from的下一个节点开始遍历设备树，当前遍历到的节点为np */
+		m = __of_match_node(matches, np);  /* 将np与matches[]里的所有元素进行匹配，返回匹配度最高的元素的指针m */
 		if (m && of_node_get(np)) {
-			if (match)
-				*match = m;
-			break;
+			if (match)  /* 确保match不为NULL */
+				*match = m;  /* 将最佳匹配通过*match传出 */
+			break;  /* 一旦匹配上了，就停下来 */
 		}
 	}
 	of_node_put(from);
 	raw_spin_unlock_irqrestore(&devtree_lock, flags);
-	return np;
+	return np;  /* 返回匹配度最高的设备树节点 */
 }
 EXPORT_SYMBOL(of_find_matching_node_and_match);
 

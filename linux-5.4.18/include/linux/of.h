@@ -261,7 +261,7 @@ static inline const char *of_node_full_name(const struct device_node *np)
 	return np ? np->full_name : "<no-node>";
 }
 
-#define for_each_of_allnodes_from(from, dn) \
+#define for_each_of_allnodes_from(from, dn) /* 遍历设备树。以节点from的下一个节点为起点；dn是当前节点 */ \
 	for (dn = __of_find_all_nodes(from); dn; dn = __of_find_all_nodes(dn))
 #define for_each_of_allnodes(dn) for_each_of_allnodes_from(NULL, dn)
 extern struct device_node *of_find_node_by_name(struct device_node *from,
@@ -1237,7 +1237,7 @@ static inline int of_property_read_s32(const struct device_node *np,
 #define for_each_matching_node(dn, matches) \
 	for (dn = of_find_matching_node(NULL, matches); dn; \
 	     dn = of_find_matching_node(dn, matches))
-#define for_each_matching_node_and_match(dn, matches, match) /* 从设备树根节点开始搜索，与matches[]里的元素逐个进行匹配。匹配到的元素为match，对应的设备树节点为dn */ \
+#define for_each_matching_node_and_match(dn, matches, match) /* 从设备树的根节点开始遍历，将每个节点与matches[]里的全部元素进行匹配。匹配到的元素为match，对应的设备树节点为dn */ \
 	for (dn = of_find_matching_node_and_match(NULL, matches, match); \
 	     dn; dn = of_find_matching_node_and_match(dn, matches, match))
 

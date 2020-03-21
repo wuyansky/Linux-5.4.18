@@ -4807,14 +4807,14 @@ void __init of_clk_init(const struct of_device_id *matches)
 		matches = &__clk_of_table;  /* 从kernel image的某个段里来获取Clock信息。这个段由 CLK_OF_DECLARE() 建立 */
 
 	/* First prepare the list of the clocks providers */
-	for_each_matching_node_and_match(np, matches, &match) {  /* 遍历__clk_of_table */
+	for_each_matching_node_and_match(np, matches, &match) {  /* 遍历设备树，遍历__clk_of_table，对两者进行交叉匹配。匹配到的设备树节点为np，对应的驱动信息为match */
 		struct clock_provider *parent;  /* 定义了一个临时变量，作为当前的clock provider */
 
-		if (!of_device_is_available(np))
+		if (!of_device_is_available(np))  /* 如果节点np的status为disabled，则跳过 */
 			continue;
 
 		parent = kzalloc(sizeof(*parent), GFP_KERNEL);
-		if (!parent) {
+		if (!parent) {  /* 申请内存失败 */
 			list_for_each_entry_safe(clk_provider, next,
 						 &clk_provider_list, node) {
 				list_del(&clk_provider->node);
@@ -4830,7 +4830,7 @@ void __init of_clk_init(const struct of_device_id *matches)
 		list_add_tail(&parent->node, &clk_provider_list);  /* 将临时变量parent添加到clk_provider_list里 */
 	}
 
-	while (!list_empty(&clk_provider_list)) {  /* 这个while循环可能会被执行一次或两次 */
+	while (!list_empty(&clk_provider_list)) {  /* 遍历clk_provider_list。这个while循环可能会被执行一次或两次 */
 		is_init_done = false;
 		list_for_each_entry_safe(clk_provider, next,  /* 遍历clk_provider_list */
 					&clk_provider_list, node) {
