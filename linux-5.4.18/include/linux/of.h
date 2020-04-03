@@ -1237,7 +1237,7 @@ static inline int of_property_read_s32(const struct device_node *np,
 #define for_each_matching_node(dn, matches) \
 	for (dn = of_find_matching_node(NULL, matches); dn; \
 	     dn = of_find_matching_node(dn, matches))
-#define for_each_matching_node_and_match(dn, matches, match) /* 从设备树的根节点开始遍历，将每个节点与matches[]里的全部元素进行匹配。匹配到的元素为match，对应的设备树节点为dn */ \
+#define for_each_matching_node_and_match(dn, matches, match) /* 从设备树的根节点开始遍历，将每个节点与matches[]里的全部元素进行匹配。匹配到一次则执行一次循环体。此次循环里匹配到的元素为match，对应的设备树节点为dn */ \
 	for (dn = of_find_matching_node_and_match(NULL, matches, match); \
 	     dn; dn = of_find_matching_node_and_match(dn, matches, match))
 
