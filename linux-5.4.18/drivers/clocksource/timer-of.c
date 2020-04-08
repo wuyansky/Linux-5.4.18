@@ -113,7 +113,7 @@ static __init int timer_of_clk_init(struct device_node *np,
 	int ret;
 
 	of_clk->clk = of_clk->name ? of_clk_get_by_name(np, of_clk->name) :
-		of_clk_get(np, of_clk->index);
+		of_clk_get(np, of_clk->index);  /* 由设备树得到of_clk->clk */
 	if (IS_ERR(of_clk->clk)) {
 		ret = PTR_ERR(of_clk->clk);
 		if (ret != -EPROBE_DEFER)
@@ -127,14 +127,14 @@ static __init int timer_of_clk_init(struct device_node *np,
 		goto out_clk_put;
 	}
 
-	of_clk->rate = clk_get_rate(of_clk->clk);
+	of_clk->rate = clk_get_rate(of_clk->clk);  /* 由of_clk->clk得到of_clk->rate */
 	if (!of_clk->rate) {
 		ret = -EINVAL;
 		pr_err("Failed to get clock rate for %pOF\n", np);
 		goto out_clk_disable;
 	}
 
-	of_clk->period = DIV_ROUND_UP(of_clk->rate, HZ);
+	of_clk->period = DIV_ROUND_UP(of_clk->rate, HZ);  /* 由of_clk->rate得到of_clk->period */
 out:
 	return ret;
 
@@ -154,9 +154,9 @@ static __init void timer_of_base_exit(struct of_timer_base *of_base)
 static __init int timer_of_base_init(struct device_node *np,
 				     struct of_timer_base *of_base)
 {
-	of_base->base = of_base->name ?
-		of_io_request_and_map(np, of_base->index, of_base->name) :
-		of_iomap(np, of_base->index);
+	of_base->base = of_base->name ?  /* 根据of_base->name是否为NULL，执行以下两条语句之一，将结果赋给of_base->base  */
+					of_io_request_and_map(np, of_base->index, of_base->name) :
+					of_iomap(np, of_base->index);  /* 将device node的reg属性里的第of_base->index个地址映射为虚拟地址。 */
 	if (IS_ERR(of_base->base)) {
 		pr_err("Failed to iomap (%s)\n", of_base->name);
 		return PTR_ERR(of_base->base);
@@ -171,21 +171,21 @@ int __init timer_of_init(struct device_node *np, struct timer_of *to)
 	int flags = 0;
 
 	if (to->flags & TIMER_OF_BASE) {
-		ret = timer_of_base_init(np, &to->of_base);
+		ret = timer_of_base_init(np, &to->of_base);  /* 根据设备树节点里配置的reg，得到虚拟地址to->of_base.base */
 		if (ret)
 			goto out_fail;
 		flags |= TIMER_OF_BASE;
 	}
 
 	if (to->flags & TIMER_OF_CLOCK) {
-		ret = timer_of_clk_init(np, &to->of_clk);
+		ret = timer_of_clk_init(np, &to->of_clk);  /* 根据设备树节点里配置的clocks或clock-names，得到to->of_clk */
 		if (ret)
 			goto out_fail;
 		flags |= TIMER_OF_CLOCK;
 	}
 
 	if (to->flags & TIMER_OF_IRQ) {
-		ret = timer_of_irq_init(np, &to->of_irq);
+		ret = timer_of_irq_init(np, &to->of_irq);  /* 根据设备树里配置的interrupts，注册对应的中断 */
 		if (ret)
 			goto out_fail;
 		flags |= TIMER_OF_IRQ;

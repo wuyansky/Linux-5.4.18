@@ -284,7 +284,7 @@ EXPORT_SYMBOL_GPL(of_irq_parse_raw);
  * interrupt specifier that can be used to retrieve a Linux IRQ number.
  */
 int of_irq_parse_one(struct device_node *device, int index, struct of_phandle_args *out_irq)
-{
+{	/* 功能：解析指定的device_node下的第index个中断的信息，将结果通过out_irq返回。注意out_irq里只保存一个中断的信息，这个中断在interrupts属性里的序号为index。返回：错误码 */
 	struct device_node *p;
 	const __be32 *addr;
 	u32 intsize;
@@ -322,7 +322,7 @@ int of_irq_parse_one(struct device_node *device, int index, struct of_phandle_ar
 	out_irq->np = p;
 	out_irq->args_count = intsize;
 	for (i = 0; i < intsize; i++) {
-		res = of_property_read_u32_index(device, "interrupts",
+		res = of_property_read_u32_index(device, "interrupts",  /* 读取interrupts = <a b c ...>里的a,b,c...。一次循环里只读取一个值，比如i为0时读取a，i为1时读取b ...  */
 						 (index * intsize) + i,
 						 out_irq->args + i);
 		if (res)

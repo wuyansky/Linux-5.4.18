@@ -71,10 +71,10 @@ struct device_node {
 };
 
 #define MAX_PHANDLE_ARGS 16
-struct of_phandle_args {
+struct of_phandle_args {  /* 用于描述一个中断的结构体 */
 	struct device_node *np;
-	int args_count;
-	uint32_t args[MAX_PHANDLE_ARGS];
+	int args_count;  /* 用几个u32数值来描述一个中断，对应np的属性 #interrupt-cells */
+	uint32_t args[MAX_PHANDLE_ARGS];  /* 一个中断的配置信息（中断类型、中断号、触发方式等），对应np的属性 interrupts 里的一组值 */
 };
 
 struct of_phandle_iterator {
