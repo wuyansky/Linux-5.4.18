@@ -106,7 +106,7 @@ void __init early_memtest(phys_addr_t start, phys_addr_t end)
 		return;
 
 	pr_info("early_memtest: # of tests: %u\n", memtest_pattern);
-	for (i = memtest_pattern-1; i < UINT_MAX; --i) {
+	for (i = memtest_pattern-1; i < UINT_MAX; --i) {  //为什么不写成 "for (i = memtest_pattern-1; i >= 0; --i) {" ，难道是为了炫技？不是。仔细看，这里的i是无符号的，如果结束条件写成"i >= 0"，那么当i=0时，进入循环，执行完循环体后再--i，i就会变为UINT_MAX，再次循环时"i >= 0"依然成立。这就产生了一个无限循环。所以结束条件必须写成"i < UINT_MAX"或"i != UINT_MAX"。
 		idx = i % ARRAY_SIZE(patterns);
 		do_one_pass(patterns[idx], start, end);
 	}

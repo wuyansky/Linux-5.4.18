@@ -1621,7 +1621,7 @@ phys_addr_t __init_memblock memblock_end_of_DRAM(void)
 {
 	int idx = memblock.memory.cnt - 1;
 
-	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);
+	return (memblock.memory.regions[idx].base + memblock.memory.regions[idx].size);  //为什么这里没有 -1 ？
 }
 
 static phys_addr_t __init_memblock __find_max_addr(phys_addr_t limit)
